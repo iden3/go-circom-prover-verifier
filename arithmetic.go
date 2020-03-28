@@ -5,6 +5,14 @@ import (
 	"math/big"
 )
 
+func arrayOfZeroes(n int) []*big.Int {
+	var r []*big.Int
+	for i := 0; i < n; i++ {
+		r = append(r, new(big.Int).SetInt64(0))
+	}
+	return r
+}
+
 func FAdd(a, b *big.Int) *big.Int {
 	ab := new(big.Int).Add(a, b)
 	return new(big.Int).Mod(ab, R)
@@ -47,4 +55,48 @@ func FExp(base *big.Int, e *big.Int) *big.Int {
 		rem = new(big.Int).Rsh(rem, 1)
 	}
 	return res
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func PolynomialSub(a, b []*big.Int) []*big.Int {
+	r := arrayOfZeroes(max(len(a), len(b)))
+	for i := 0; i < len(a); i++ {
+		r[i] = FAdd(r[i], a[i])
+	}
+	for i := 0; i < len(b); i++ {
+		r[i] = FSub(r[i], b[i])
+	}
+	return r
+}
+
+func PolynomialMul(a, b []*big.Int) []*big.Int {
+	r := arrayOfZeroes(len(a) + len(b) - 1)
+	for i := 0; i < len(a); i++ {
+		for j := 0; j < len(b); j++ {
+			r[i+j] = FAdd(r[i+j], FMul(a[i], b[j]))
+		}
+	}
+	return r
+}
+
+func PolynomialDiv(a, b []*big.Int) ([]*big.Int, []*big.Int) {
+	// https://en.wikipedia.org/wiki/Division_algorithm
+	r := arrayOfZeroes(len(a) - len(b) + 1)
+	rem := a
+	for len(rem) >= len(b) {
+		l := FDiv(rem[len(rem)-1], b[len(b)-1])
+		pos := len(rem) - len(b)
+		r[pos] = l
+		aux := arrayOfZeroes(pos)
+		aux1 := append(aux, l)
+		aux2 := PolynomialSub(rem, PolynomialMul(b, aux1))
+		rem = aux2[:len(aux2)-1]
+	}
+	return r, rem
 }
