@@ -33,6 +33,24 @@ type ProvingKeyString struct {
 
 type WitnessString []string
 
+func ParseWitness(wJson []byte) (Witness, error) {
+	var ws WitnessString
+	err := json.Unmarshal(wJson, &ws)
+	if err != nil {
+		return nil, err
+	}
+
+	var w Witness
+	for i := 0; i < len(ws); i++ {
+		bi, err := stringToBigInt(ws[i])
+		if err != nil {
+			return nil, err
+		}
+		w = append(w, bi)
+	}
+	return w, nil
+}
+
 func ParseProvingKey(pkJson []byte) (*ProvingKey, error) {
 	var pkStr ProvingKeyString
 	err := json.Unmarshal(pkJson, &pkStr)
