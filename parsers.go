@@ -9,6 +9,54 @@ import (
 	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
 )
 
+func addZPadding(b []byte) []byte {
+	var z [32]byte
+	var r []byte
+	r = append(r, z[len(b):]...) // add padding on the left
+	r = append(r, b...)
+	return r[:32]
+}
+
+func stringToBytes(s string) ([]byte, error) {
+	if s == "1" {
+		s = "0"
+	}
+	bi, ok := new(big.Int).SetString(s, 10)
+	if !ok {
+		return nil, fmt.Errorf("error parsing bigint stringToBytes")
+	}
+	b := bi.Bytes()
+	if len(b) != 32 {
+		b = addZPadding(b)
+	}
+	return b, nil
+
+}
+
+func arrayStringToG1(h [][]string) ([]*bn256.G1, error) {
+	var o []*bn256.G1
+	for i := 0; i < len(h); i++ {
+		hi, err := stringToG1(h[i])
+		if err != nil {
+			return o, err
+		}
+		o = append(o, hi)
+	}
+	return o, nil
+}
+
+func arrayStringToG2(h [][][]string) ([]*bn256.G2, error) {
+	var o []*bn256.G2
+	for i := 0; i < len(h); i++ {
+		hi, err := stringToG2(h[i])
+		if err != nil {
+			return o, err
+		}
+		o = append(o, hi)
+	}
+	return o, nil
+}
+
 func stringToG1(h []string) (*bn256.G1, error) {
 	if len(h) <= 2 {
 		return nil, fmt.Errorf("not enought data for stringToG1")
