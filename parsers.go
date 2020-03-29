@@ -66,3 +66,56 @@ func stringToG1(h []string) (*bn256.G1, error) {
 
 	return p, err
 }
+
+func stringToG2(h [][]string) (*bn256.G2, error) {
+	if len(h) <= 2 {
+		return nil, fmt.Errorf("not enought data for stringToG2")
+	}
+	h = h[:2]
+	hexa := false
+	if len(h[0][0]) > 1 {
+		if "0x" == h[0][0][:2] {
+			hexa = true
+		}
+	}
+	in := ""
+	var b []byte
+	var err error
+	if hexa {
+		for i := 0; i < len(h); i++ {
+			for j := 0; j < len(h[i]); j++ {
+				in += strings.TrimPrefix(h[i][j], "0x")
+			}
+		}
+		b, err = hex.DecodeString(in)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// TODO TMP
+		bH, err := stringToBytes(h[0][1])
+		if err != nil {
+			return nil, err
+		}
+		b = append(b, bH...)
+		bH, err = stringToBytes(h[0][0])
+		if err != nil {
+			return nil, err
+		}
+		b = append(b, bH...)
+		bH, err = stringToBytes(h[1][1])
+		if err != nil {
+			return nil, err
+		}
+		b = append(b, bH...)
+		bH, err = stringToBytes(h[1][0])
+		if err != nil {
+			return nil, err
+		}
+		b = append(b, bH...)
+	}
+
+	p := new(bn256.G2)
+	_, err = p.Unmarshal(b)
+	return p, err
+}
