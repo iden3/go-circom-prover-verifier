@@ -2,6 +2,7 @@ package gocircomprover
 
 import (
 	"crypto/rand"
+	"fmt"
 	"math/big"
 
 	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
@@ -100,4 +101,33 @@ func Prove(pk *ProvingKey, w Witness) (*Proof, []*big.Int, error) {
 	pubSignals := w[1 : pk.NPublic+1]
 
 	return &proof, pubSignals, nil
+}
+
+func calculateH(pk *ProvingKey, w Witness) []*big.Int {
+	m := pk.DomainSize
+	polAT := arrayOfZeroes(m)
+	polBT := arrayOfZeroes(m)
+	polCT := arrayOfZeroes(m)
+
+	for i := 0; i < pk.NVars; i++ {
+		for j, _ := range pk.PolsA[i] {
+			polAT[j] = FAdd(polAT[j], FMul(w[i], pk.PolsA[i][j]))
+			fmt.Println(polAT[j])
+		}
+		for j, _ := range pk.PolsB[i] {
+			polBT[j] = FAdd(polBT[j], FMul(w[i], pk.PolsB[i][j]))
+		}
+		for j, _ := range pk.PolsC[i] {
+			polCT[j] = FAdd(polCT[j], FMul(w[i], pk.PolsC[i][j]))
+		}
+	}
+	polAS := ifft(polAT)
+	polBS := ifft(polBT)
+
+	polABS := PolynomialMul(polAS, polBS)
+	polCS := ifft(polCT)
+	polABCS := PolynomialSub(polABS, polCS)
+
+	hS := polABCS[m:]
+	return hS
 }
