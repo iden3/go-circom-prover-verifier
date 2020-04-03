@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestProve(t *testing.T) {
+func TestGenerateProf(t *testing.T) {
 	provingKeyJson, err := ioutil.ReadFile("testdata/provingkey.json")
 	require.Nil(t, err)
 	pk, err := ParseProvingKey(provingKeyJson)
@@ -28,7 +28,7 @@ func TestProve(t *testing.T) {
 	fmt.Println("w", w)
 	assert.Equal(t, Witness{big.NewInt(1), big.NewInt(33), big.NewInt(3), big.NewInt(11)}, w)
 
-	proof, pubSignals, err := Prove(pk, w)
+	proof, pubSignals, err := GenerateProof(pk, w)
 	assert.Nil(t, err)
 	fmt.Println("proof", proof)
 	fmt.Println("pubSignals", pubSignals)

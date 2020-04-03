@@ -12,6 +12,7 @@ import (
 	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
 )
 
+// ProvingKeyString is the equivalent to the ProvingKey struct in string representation
 type ProvingKeyString struct {
 	A          [][]string          `json:"A"`
 	B2         [][][]string        `json:"B2"`
@@ -31,8 +32,10 @@ type ProvingKeyString struct {
 	PolsC      []map[string]string `json:"polsC"`
 }
 
+// WitnessString contains the Witness in string representation
 type WitnessString []string
 
+// ParseWitness parses the json []byte data into the Witness struct
 func ParseWitness(wJson []byte) (Witness, error) {
 	var ws WitnessString
 	err := json.Unmarshal(wJson, &ws)
@@ -51,6 +54,7 @@ func ParseWitness(wJson []byte) (Witness, error) {
 	return w, nil
 }
 
+// ParseProvingKey parses the json []byte data into the ProvingKey struct
 func ParseProvingKey(pkJson []byte) (*ProvingKey, error) {
 	var pkStr ProvingKeyString
 	err := json.Unmarshal(pkJson, &pkStr)

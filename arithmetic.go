@@ -13,35 +13,35 @@ func arrayOfZeroes(n int) []*big.Int {
 	return r
 }
 
-func FAdd(a, b *big.Int) *big.Int {
+func fAdd(a, b *big.Int) *big.Int {
 	ab := new(big.Int).Add(a, b)
 	return new(big.Int).Mod(ab, R)
 }
 
-func FSub(a, b *big.Int) *big.Int {
+func fSub(a, b *big.Int) *big.Int {
 	ab := new(big.Int).Sub(a, b)
 	return new(big.Int).Mod(ab, R)
 }
 
-func FMul(a, b *big.Int) *big.Int {
+func fMul(a, b *big.Int) *big.Int {
 	ab := new(big.Int).Mul(a, b)
 	return new(big.Int).Mod(ab, R)
 }
 
-func FDiv(a, b *big.Int) *big.Int {
+func fDiv(a, b *big.Int) *big.Int {
 	ab := new(big.Int).Mul(a, new(big.Int).ModInverse(b, R))
 	return new(big.Int).Mod(ab, R)
 }
 
-func FNeg(a *big.Int) *big.Int {
+func fNeg(a *big.Int) *big.Int {
 	return new(big.Int).Mod(new(big.Int).Neg(a), R)
 }
 
-func FInv(a *big.Int) *big.Int {
+func fInv(a *big.Int) *big.Int {
 	return new(big.Int).ModInverse(a, R)
 }
 
-func FExp(base *big.Int, e *big.Int) *big.Int {
+func fExp(base *big.Int, e *big.Int) *big.Int {
 	res := big.NewInt(1)
 	rem := new(big.Int).Set(e)
 	exp := base
@@ -49,9 +49,9 @@ func FExp(base *big.Int, e *big.Int) *big.Int {
 	for !bytes.Equal(rem.Bytes(), big.NewInt(int64(0)).Bytes()) {
 		// if BigIsOdd(rem) {
 		if rem.Bit(0) == 1 { // .Bit(0) returns 1 when is odd
-			res = FMul(res, exp)
+			res = fMul(res, exp)
 		}
-		exp = FMul(exp, exp)
+		exp = fMul(exp, exp)
 		rem = new(big.Int).Rsh(rem, 1)
 	}
 	return res
@@ -64,38 +64,38 @@ func max(a, b int) int {
 	return b
 }
 
-func PolynomialSub(a, b []*big.Int) []*big.Int {
+func polynomialSub(a, b []*big.Int) []*big.Int {
 	r := arrayOfZeroes(max(len(a), len(b)))
 	for i := 0; i < len(a); i++ {
-		r[i] = FAdd(r[i], a[i])
+		r[i] = fAdd(r[i], a[i])
 	}
 	for i := 0; i < len(b); i++ {
-		r[i] = FSub(r[i], b[i])
+		r[i] = fSub(r[i], b[i])
 	}
 	return r
 }
 
-func PolynomialMul(a, b []*big.Int) []*big.Int {
+func polynomialMul(a, b []*big.Int) []*big.Int {
 	r := arrayOfZeroes(len(a) + len(b) - 1)
 	for i := 0; i < len(a); i++ {
 		for j := 0; j < len(b); j++ {
-			r[i+j] = FAdd(r[i+j], FMul(a[i], b[j]))
+			r[i+j] = fAdd(r[i+j], fMul(a[i], b[j]))
 		}
 	}
 	return r
 }
 
-func PolynomialDiv(a, b []*big.Int) ([]*big.Int, []*big.Int) {
+func polynomialDiv(a, b []*big.Int) ([]*big.Int, []*big.Int) {
 	// https://en.wikipedia.org/wiki/Division_algorithm
 	r := arrayOfZeroes(len(a) - len(b) + 1)
 	rem := a
 	for len(rem) >= len(b) {
-		l := FDiv(rem[len(rem)-1], b[len(b)-1])
+		l := fDiv(rem[len(rem)-1], b[len(b)-1])
 		pos := len(rem) - len(b)
 		r[pos] = l
 		aux := arrayOfZeroes(pos)
 		aux1 := append(aux, l)
-		aux2 := PolynomialSub(rem, PolynomialMul(b, aux1))
+		aux2 := polynomialSub(rem, polynomialMul(b, aux1))
 		rem = aux2[:len(aux2)-1]
 	}
 	return r, rem

@@ -21,30 +21,28 @@ func newRootsT() rootsT {
 		rem = new(big.Int).Rsh(rem, 1)
 	}
 	roots.w = make([]*big.Int, s+1)
-	roots.w[s] = FExp(big.NewInt(5), rem)
+	roots.w[s] = fExp(big.NewInt(5), rem)
 
 	n := s - 1
 	for n >= 0 {
-		roots.w[n] = FMul(roots.w[n+1], roots.w[n+1])
+		roots.w[n] = fMul(roots.w[n+1], roots.w[n+1])
 		n--
 	}
-	roots.roots = make([][]*big.Int, 50)
+	roots.roots = make([][]*big.Int, 50) // TODO WIP
 
 	roots.setRoots(15)
 	return roots
 }
 
 func (roots rootsT) setRoots(n int) {
-	// var roots []bool
 	for i := n; i >= 0 && nil == roots.roots[i]; i-- { // TODO tmp i<=len(r)
 		r := big.NewInt(1)
 		nroots := 1 << i
 		var rootsi []*big.Int
 		for j := 0; j < nroots; j++ {
 			rootsi = append(rootsi, r)
-			r = FMul(r, roots.w[i])
+			r = fMul(r, roots.w[i])
 		}
-		// fmt.Println("rootsi", rootsi)
 		roots.roots[i] = rootsi
 	}
 }
@@ -55,8 +53,8 @@ func fft(roots rootsT, pall []*big.Int, bits, offset, step int) []*big.Int {
 		return []*big.Int{pall[offset]}
 	} else if n == 2 {
 		return []*big.Int{
-			FAdd(pall[offset], pall[offset+step]), // TODO tmp
-			FSub(pall[offset], pall[offset+step]),
+			fAdd(pall[offset], pall[offset+step]), // TODO tmp
+			fSub(pall[offset], pall[offset+step]),
 		}
 	}
 
@@ -68,8 +66,8 @@ func fft(roots rootsT, pall []*big.Int, bits, offset, step int) []*big.Int {
 	out := make([]*big.Int, n)
 	for i := 0; i < ndiv2; i++ {
 		fmt.Println(i, len(roots.roots))
-		out[i] = FAdd(p1[i], FMul(roots.roots[bits][i], p2[i]))
-		out[i+ndiv2] = FSub(p1[i], FMul(roots.roots[bits][i], p2[i]))
+		out[i] = fAdd(p1[i], fMul(roots.roots[bits][i], p2[i]))
+		out[i+ndiv2] = fSub(p1[i], fMul(roots.roots[bits][i], p2[i]))
 	}
 	return out
 }
@@ -85,11 +83,11 @@ func ifft(p []*big.Int) []*big.Int {
 	ep := extend(p, m)
 	res := fft(roots, ep, int(bits), 0, 1)
 
-	twoinvm := FInv(FMul(big.NewInt(1), big.NewInt(int64(m))))
+	twoinvm := fInv(fMul(big.NewInt(1), big.NewInt(int64(m))))
 
 	var resn []*big.Int
 	for i := 0; i < m; i++ {
-		resn = append(resn, FMul(res[(m-i)%m], twoinvm))
+		resn = append(resn, fMul(res[(m-i)%m], twoinvm))
 	}
 
 	return resn

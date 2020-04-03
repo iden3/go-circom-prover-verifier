@@ -8,12 +8,14 @@ import (
 	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
 )
 
+// Proof is the data structure of the Groth16 zkSNARK proof
 type Proof struct {
 	A *bn256.G1
 	B *bn256.G2
 	C *bn256.G1
 }
 
+// ProvingKey holds the data structure of the provingKey
 type ProvingKey struct {
 	A          []*bn256.G1
 	B2         []*bn256.G2
@@ -33,11 +35,13 @@ type ProvingKey struct {
 	PolsC      []map[int]*big.Int
 }
 
+// Witness contains the witness
 type Witness []*big.Int
 
+// R is the mod of the finite field
 var R, _ = new(big.Int).SetString("21888242871839275222246405745257275088548364400416034343698204186575808495617", 10)
 
-func RandBigInt() (*big.Int, error) {
+func randBigInt() (*big.Int, error) {
 	maxbits := R.BitLen()
 	b := make([]byte, (maxbits/8)-1)
 	_, err := rand.Read(b)
@@ -50,14 +54,15 @@ func RandBigInt() (*big.Int, error) {
 	return rq, nil
 }
 
-func Prove(pk *ProvingKey, w Witness) (*Proof, []*big.Int, error) {
+// GenerateProof generates the Groth16 zkSNARK proof
+func GenerateProof(pk *ProvingKey, w Witness) (*Proof, []*big.Int, error) {
 	var proof Proof
 
-	r, err := RandBigInt()
+	r, err := randBigInt()
 	if err != nil {
 		return nil, nil, err
 	}
-	s, err := RandBigInt()
+	s, err := randBigInt()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -95,7 +100,7 @@ func Prove(pk *ProvingKey, w Witness) (*Proof, []*big.Int, error) {
 	}
 	proof.C = new(bn256.G1).Add(proof.C, new(bn256.G1).ScalarMult(proof.A, s))
 	proof.C = new(bn256.G1).Add(proof.C, new(bn256.G1).ScalarMult(proofBG1, r))
-	rsneg := new(big.Int).Mod(new(big.Int).Neg(new(big.Int).Mul(r, s)), R) // FAdd & FMul
+	rsneg := new(big.Int).Mod(new(big.Int).Neg(new(big.Int).Mul(r, s)), R) // fAdd & fMul
 	proof.C = new(bn256.G1).Add(proof.C, new(bn256.G1).ScalarMult(pk.VkDelta1, rsneg))
 
 	pubSignals := w[1 : pk.NPublic+1]
@@ -110,23 +115,23 @@ func calculateH(pk *ProvingKey, w Witness) []*big.Int {
 	polCT := arrayOfZeroes(m)
 
 	for i := 0; i < pk.NVars; i++ {
-		for j, _ := range pk.PolsA[i] {
-			polAT[j] = FAdd(polAT[j], FMul(w[i], pk.PolsA[i][j]))
+		for j := range pk.PolsA[i] {
+			polAT[j] = fAdd(polAT[j], fMul(w[i], pk.PolsA[i][j]))
 			fmt.Println(polAT[j])
 		}
-		for j, _ := range pk.PolsB[i] {
-			polBT[j] = FAdd(polBT[j], FMul(w[i], pk.PolsB[i][j]))
+		for j := range pk.PolsB[i] {
+			polBT[j] = fAdd(polBT[j], fMul(w[i], pk.PolsB[i][j]))
 		}
-		for j, _ := range pk.PolsC[i] {
-			polCT[j] = FAdd(polCT[j], FMul(w[i], pk.PolsC[i][j]))
+		for j := range pk.PolsC[i] {
+			polCT[j] = fAdd(polCT[j], fMul(w[i], pk.PolsC[i][j]))
 		}
 	}
 	polAS := ifft(polAT)
 	polBS := ifft(polBT)
 
-	polABS := PolynomialMul(polAS, polBS)
+	polABS := polynomialMul(polAS, polBS)
 	polCS := ifft(polCT)
-	polABCS := PolynomialSub(polABS, polCS)
+	polABCS := polynomialSub(polABS, polCS)
 
 	hS := polABCS[m:]
 	return hS
