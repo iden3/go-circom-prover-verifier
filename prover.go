@@ -2,7 +2,6 @@ package gocircomprover
 
 import (
 	"crypto/rand"
-	"fmt"
 	"math/big"
 
 	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
@@ -91,9 +90,7 @@ func GenerateProof(pk *ProvingKey, w Witness) (*Proof, []*big.Int, error) {
 	proofBG1 = new(bn256.G1).Add(proofBG1, pk.VkBeta1)
 	proofBG1 = new(bn256.G1).Add(proofBG1, new(bn256.G1).ScalarMult(pk.VkDelta1, s))
 
-	// TODO
-	// h := calculateH(pk, w)
-	h := []*big.Int{} // TMP
+	h := calculateH(pk, w)
 
 	for i := 0; i < len(h); i++ {
 		proof.C = new(bn256.G1).Add(proof.C, new(bn256.G1).ScalarMult(pk.HExps[i], h[i]))
@@ -117,7 +114,6 @@ func calculateH(pk *ProvingKey, w Witness) []*big.Int {
 	for i := 0; i < pk.NVars; i++ {
 		for j := range pk.PolsA[i] {
 			polAT[j] = fAdd(polAT[j], fMul(w[i], pk.PolsA[i][j]))
-			fmt.Println(polAT[j])
 		}
 		for j := range pk.PolsB[i] {
 			polBT[j] = fAdd(polBT[j], fMul(w[i], pk.PolsB[i][j]))
