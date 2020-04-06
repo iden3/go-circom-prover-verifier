@@ -35,6 +35,14 @@ type ProvingKeyString struct {
 // WitnessString contains the Witness in string representation
 type WitnessString []string
 
+// ProofString is the equivalent to the Proof struct in string representation
+type ProofString struct {
+	A        [3]string    `json:"pi_a"`
+	B        [3][2]string `json:"pi_b"`
+	C        [3]string    `json:"pi_c"`
+	Protocol string       `json:"protocol"`
+}
+
 // ParseWitness parses the json []byte data into the Witness struct
 func ParseWitness(wJson []byte) (Witness, error) {
 	var ws WitnessString
@@ -149,10 +157,8 @@ func polsStringToBigInt(s []map[string]string) ([]map[int]*big.Int, error) {
 			// oi = append(oi, si)
 			jInt, err := strconv.Atoi(j)
 			if err != nil {
-				fmt.Println(j)
 				return o, err
 			}
-			fmt.Println(jInt, si)
 			oi[jInt] = si
 		}
 		o = append(o, oi)
@@ -342,4 +348,30 @@ func stringToG2(h [][]string) (*bn256.G2, error) {
 	p := new(bn256.G2)
 	_, err = p.Unmarshal(b)
 	return p, err
+}
+
+func proofToString(p *Proof) ([]byte, error) {
+	var ps ProofString
+
+	a := p.A.Marshal()
+	ps.A[0] = new(big.Int).SetBytes(a[:32]).String()
+	ps.A[1] = new(big.Int).SetBytes(a[32:64]).String()
+	ps.A[2] = "1"
+
+	b := p.B.Marshal()
+	ps.B[0][1] = new(big.Int).SetBytes(b[:32]).String()
+	ps.B[0][0] = new(big.Int).SetBytes(b[32:64]).String()
+	ps.B[1][1] = new(big.Int).SetBytes(b[64:96]).String()
+	ps.B[1][0] = new(big.Int).SetBytes(b[96:128]).String()
+	ps.B[2][0] = "1"
+	ps.B[2][1] = "0"
+
+	c := p.C.Marshal()
+	ps.C[0] = new(big.Int).SetBytes(c[:32]).String()
+	ps.C[1] = new(big.Int).SetBytes(c[32:64]).String()
+	ps.C[2] = "1"
+
+	ps.Protocol = "groth"
+
+	return json.Marshal(ps)
 }

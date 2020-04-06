@@ -1,7 +1,6 @@
 package gocircomprover
 
 import (
-	"fmt"
 	"math"
 	"math/big"
 )
@@ -65,7 +64,7 @@ func fft(roots rootsT, pall []*big.Int, bits, offset, step int) []*big.Int {
 	// var out []*big.Int
 	out := make([]*big.Int, n)
 	for i := 0; i < ndiv2; i++ {
-		fmt.Println(i, len(roots.roots))
+		// fmt.Println(i, len(roots.roots))
 		out[i] = fAdd(p1[i], fMul(roots.roots[bits][i], p2[i]))
 		out[i+ndiv2] = fSub(p1[i], fMul(roots.roots[bits][i], p2[i]))
 	}
