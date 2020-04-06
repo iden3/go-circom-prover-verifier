@@ -21,6 +21,12 @@ w, _ := circomprover.ParseWitness(witnessJson)
 // generate the proof
 proof, pubSignals, err := circomprover.GenerateProof(pk, w)
 assert.Nil(t, err)
-fmt.Println(pubSignals)
-fmt.Println(proof)
+
+proofStr, err := circomprover.ProofToString(proof)
+assert.Nil(t, err)
+publicStr, err := json.Marshal(circomprover.ArrayBigIntToString(pubSignals)
+assert.Nil(t, err)
+
+fmt.Println(proofStr)
+fmt.Println(publicStr)
 ```

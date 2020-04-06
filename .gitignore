@@ -1,0 +1,7 @@
+testdata/*/*.json
+testdata/*/*.wasm
+testdata/*/*.cpp
+testdata/*/*.sym
+testdata/*/*.r1cs
+!testdata/*/input.json
+

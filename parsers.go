@@ -166,6 +166,15 @@ func polsStringToBigInt(s []map[string]string) ([]map[int]*big.Int, error) {
 	return o, nil
 }
 
+// ArrayBigIntToString converts an []*big.Int into []string, used to output the Public Signals
+func ArrayBigIntToString(bi []*big.Int) []string {
+	var s []string
+	for i := 0; i < len(bi); i++ {
+		s = append(s, bi[i].String())
+	}
+	return s
+}
+
 func arrayStringToBigInt(s []string) ([]*big.Int, error) {
 	var o []*big.Int
 	for i := 0; i < len(s); i++ {
@@ -350,7 +359,8 @@ func stringToG2(h [][]string) (*bn256.G2, error) {
 	return p, err
 }
 
-func proofToString(p *Proof) ([]byte, error) {
+// ProofToJson outputs the Proof i Json format
+func ProofToJson(p *Proof) ([]byte, error) {
 	var ps ProofString
 
 	a := p.A.Marshal()
