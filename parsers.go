@@ -12,8 +12,8 @@ import (
 	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
 )
 
-// ProvingKeyString is the equivalent to the ProvingKey struct in string representation
-type ProvingKeyString struct {
+// PkString is the equivalent to the Pk struct in string representation, containing the ProvingKey
+type PkString struct {
 	A          [][]string          `json:"A"`
 	B2         [][][]string        `json:"B2"`
 	B1         [][]string          `json:"B1"`
@@ -37,10 +37,19 @@ type WitnessString []string
 
 // ProofString is the equivalent to the Proof struct in string representation
 type ProofString struct {
-	A        [3]string    `json:"pi_a"`
-	B        [3][2]string `json:"pi_b"`
-	C        [3]string    `json:"pi_c"`
-	Protocol string       `json:"protocol"`
+	A        []string   `json:"pi_a"`
+	B        [][]string `json:"pi_b"`
+	C        []string   `json:"pi_c"`
+	Protocol string     `json:"protocol"`
+}
+
+// VkString is the Verification Key data structure in string format (from json)
+type VkString struct {
+	Alpha    []string   `json:"vk_alfa_1"`
+	Beta     [][]string `json:"vk_beta_2"`
+	Gamma    [][]string `json:"vk_gamma_2"`
+	Delta    [][]string `json:"vk_delta_2"`
+	GammaABC [][]string `json:"IC"`
 }
 
 // ParseWitness parses the json []byte data into the Witness struct
@@ -62,19 +71,19 @@ func ParseWitness(wJson []byte) (Witness, error) {
 	return w, nil
 }
 
-// ParseProvingKey parses the json []byte data into the ProvingKey struct
-func ParseProvingKey(pkJson []byte) (*ProvingKey, error) {
-	var pkStr ProvingKeyString
+// ParsePk parses the json []byte data into the Pk struct
+func ParsePk(pkJson []byte) (*Pk, error) {
+	var pkStr PkString
 	err := json.Unmarshal(pkJson, &pkStr)
 	if err != nil {
 		return nil, err
 	}
-	pk, err := provingKeyStringToProvingKey(pkStr)
+	pk, err := pkStringToPk(pkStr)
 	return pk, err
 }
 
-func provingKeyStringToProvingKey(ps ProvingKeyString) (*ProvingKey, error) {
-	var p ProvingKey
+func pkStringToPk(ps PkString) (*Pk, error) {
+	var p Pk
 	var err error
 
 	p.A, err = arrayStringToG1(ps.A)
@@ -141,6 +150,101 @@ func provingKeyStringToProvingKey(ps ProvingKeyString) (*ProvingKey, error) {
 	}
 
 	return &p, nil
+}
+
+func proofStringToProof(pr ProofString) (*Proof, error) {
+	var p Proof
+	var err error
+	p.A, err = stringToG1(pr.A)
+	if err != nil {
+		return nil, err
+	}
+
+	p.B, err = stringToG2(pr.B)
+	if err != nil {
+		return nil, err
+	}
+
+	p.C, err = stringToG1(pr.C)
+	if err != nil {
+		return nil, err
+	}
+
+	return &p, nil
+}
+
+// ParseProof takes a json []byte and outputs the *Proof struct
+func ParseProof(pj []byte) (*Proof, error) {
+	var pr ProofString
+	err := json.Unmarshal(pj, &pr)
+	if err != nil {
+		return nil, err
+	}
+	p, err := proofStringToProof(pr)
+	return p, err
+}
+
+// ParsePublicSignals takes a json []byte and outputs the []*big.Int struct
+func ParsePublicSignals(pj []byte) ([]*big.Int, error) {
+	var pr []string
+	err := json.Unmarshal(pj, &pr)
+	if err != nil {
+		return nil, err
+	}
+	var public []*big.Int
+	for _, s := range pr {
+		sb, err := stringToBigInt(s)
+		if err != nil {
+			return nil, err
+		}
+		public = append(public, sb)
+	}
+	return public, nil
+}
+
+// ParseVk takes a json []byte and outputs the *Vk struct
+func ParseVk(vj []byte) (*Vk, error) {
+	var vr VkString
+	err := json.Unmarshal(vj, &vr)
+	if err != nil {
+		return nil, err
+	}
+	v, err := vkStringToVk(vr)
+	return v, err
+}
+
+func vkStringToVk(vr VkString) (*Vk, error) {
+	var v Vk
+	var err error
+	v.Alpha, err = stringToG1(vr.Alpha)
+	if err != nil {
+		return nil, err
+	}
+
+	v.Beta, err = stringToG2(vr.Beta)
+	if err != nil {
+		return nil, err
+	}
+
+	v.Gamma, err = stringToG2(vr.Gamma)
+	if err != nil {
+		return nil, err
+	}
+
+	v.Delta, err = stringToG2(vr.Delta)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < len(vr.GammaABC); i++ {
+		p, err := stringToG1(vr.GammaABC[i])
+		if err != nil {
+			return nil, err
+		}
+		v.GammaABC = append(v.GammaABC, p)
+	}
+
+	return &v, nil
 }
 
 // polsStringToBigInt is for taking string polynomials and converting it to *big.Int polynomials
@@ -362,6 +466,12 @@ func stringToG2(h [][]string) (*bn256.G2, error) {
 // ProofToJson outputs the Proof i Json format
 func ProofToJson(p *Proof) ([]byte, error) {
 	var ps ProofString
+	ps.A = make([]string, 3)
+	ps.B = make([][]string, 3)
+	ps.B[0] = make([]string, 2)
+	ps.B[1] = make([]string, 2)
+	ps.B[2] = make([]string, 2)
+	ps.C = make([]string, 3)
 
 	a := p.A.Marshal()
 	ps.A[0] = new(big.Int).SetBytes(a[:32]).String()
