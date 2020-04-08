@@ -2,7 +2,6 @@ package gocircomprover
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"math/big"
 	"testing"
@@ -14,12 +13,8 @@ import (
 func TestSmallCircuitGenerateProf(t *testing.T) {
 	provingKeyJson, err := ioutil.ReadFile("testdata/small/proving_key.json")
 	require.Nil(t, err)
-	pk, err := ParseProvingKey(provingKeyJson)
+	pk, err := ParsePk(provingKeyJson)
 	require.Nil(t, err)
-
-	fmt.Println("polsA", pk.PolsA)
-	fmt.Println("polsB", pk.PolsB)
-	fmt.Println("polsC", pk.PolsC)
 
 	witnessJson, err := ioutil.ReadFile("testdata/small/witness.json")
 	require.Nil(t, err)
@@ -30,12 +25,9 @@ func TestSmallCircuitGenerateProf(t *testing.T) {
 
 	proof, pubSignals, err := GenerateProof(pk, w)
 	assert.Nil(t, err)
-	fmt.Println("proof", proof)
-	fmt.Println("pubSignals", pubSignals)
 
 	proofStr, err := ProofToJson(proof)
 	assert.Nil(t, err)
-	fmt.Println("prover\n", string(proofStr))
 
 	err = ioutil.WriteFile("testdata/small/proof.json", proofStr, 0644)
 	assert.Nil(t, err)
@@ -51,7 +43,7 @@ func TestSmallCircuitGenerateProf(t *testing.T) {
 func TestBigCircuitGenerateProf(t *testing.T) {
 	provingKeyJson, err := ioutil.ReadFile("testdata/big/proving_key.json")
 	require.Nil(t, err)
-	pk, err := ParseProvingKey(provingKeyJson)
+	pk, err := ParsePk(provingKeyJson)
 	require.Nil(t, err)
 
 	witnessJson, err := ioutil.ReadFile("testdata/big/witness.json")
@@ -61,12 +53,9 @@ func TestBigCircuitGenerateProf(t *testing.T) {
 
 	proof, pubSignals, err := GenerateProof(pk, w)
 	assert.Nil(t, err)
-	fmt.Println("proof", proof)
-	fmt.Println("pubSignals", pubSignals)
 
 	proofStr, err := ProofToJson(proof)
 	assert.Nil(t, err)
-	fmt.Println("prover\n", string(proofStr))
 
 	err = ioutil.WriteFile("testdata/big/proof.json", proofStr, 0644)
 	assert.Nil(t, err)

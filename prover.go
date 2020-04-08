@@ -14,8 +14,8 @@ type Proof struct {
 	C *bn256.G1
 }
 
-// ProvingKey holds the data structure of the provingKey
-type ProvingKey struct {
+// Pk holds the data structure of the ProvingKey
+type Pk struct {
 	A          []*bn256.G1
 	B2         []*bn256.G2
 	B1         []*bn256.G1
@@ -54,7 +54,7 @@ func randBigInt() (*big.Int, error) {
 }
 
 // GenerateProof generates the Groth16 zkSNARK proof
-func GenerateProof(pk *ProvingKey, w Witness) (*Proof, []*big.Int, error) {
+func GenerateProof(pk *Pk, w Witness) (*Proof, []*big.Int, error) {
 	var proof Proof
 
 	r, err := randBigInt()
@@ -105,7 +105,7 @@ func GenerateProof(pk *ProvingKey, w Witness) (*Proof, []*big.Int, error) {
 	return &proof, pubSignals, nil
 }
 
-func calculateH(pk *ProvingKey, w Witness) []*big.Int {
+func calculateH(pk *Pk, w Witness) []*big.Int {
 	m := pk.DomainSize
 	polAT := arrayOfZeroes(m)
 	polBT := arrayOfZeroes(m)

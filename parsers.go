@@ -45,11 +45,11 @@ type ProofString struct {
 
 // VkString is the Verification Key data structure in string format (from json)
 type VkString struct {
-	Alpha    []string   `json:"vk_alfa_1"`
-	Beta     [][]string `json:"vk_beta_2"`
-	Gamma    [][]string `json:"vk_gamma_2"`
-	Delta    [][]string `json:"vk_delta_2"`
-	GammaABC [][]string `json:"IC"`
+	Alpha []string   `json:"vk_alfa_1"`
+	Beta  [][]string `json:"vk_beta_2"`
+	Gamma [][]string `json:"vk_gamma_2"`
+	Delta [][]string `json:"vk_delta_2"`
+	IC    [][]string `json:"IC"`
 }
 
 // ParseWitness parses the json []byte data into the Witness struct
@@ -236,12 +236,12 @@ func vkStringToVk(vr VkString) (*Vk, error) {
 		return nil, err
 	}
 
-	for i := 0; i < len(vr.GammaABC); i++ {
-		p, err := stringToG1(vr.GammaABC[i])
+	for i := 0; i < len(vr.IC); i++ {
+		p, err := stringToG1(vr.IC[i])
 		if err != nil {
 			return nil, err
 		}
-		v.GammaABC = append(v.GammaABC, p)
+		v.IC = append(v.IC, p)
 	}
 
 	return &v, nil
