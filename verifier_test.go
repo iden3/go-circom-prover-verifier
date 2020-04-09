@@ -26,3 +26,23 @@ func TestVerify1(t *testing.T) {
 	v := Verify(vk, proof, public)
 	assert.True(t, v)
 }
+
+func BenchmarkVerify(b *testing.B) {
+	proofJson, err := ioutil.ReadFile("testdata/big/proof.json")
+	require.Nil(b, err)
+	vkJson, err := ioutil.ReadFile("testdata/big/verification_key.json")
+	require.Nil(b, err)
+	publicJson, err := ioutil.ReadFile("testdata/big/public.json")
+	require.Nil(b, err)
+
+	public, err := ParsePublicSignals(publicJson)
+	require.Nil(b, err)
+	proof, err := ParseProof(proofJson)
+	require.Nil(b, err)
+	vk, err := ParseVk(vkJson)
+	require.Nil(b, err)
+
+	for i := 0; i < b.N; i++ {
+		Verify(vk, proof, public)
+	}
+}

@@ -36,7 +36,16 @@ func TestSmallCircuitGenerateProf(t *testing.T) {
 	err = ioutil.WriteFile("testdata/small/public.json", publicStr, 0644)
 	assert.Nil(t, err)
 
-	// to verify the proof:
+	// verify the proof
+	vkJson, err := ioutil.ReadFile("testdata/small/verification_key.json")
+	require.Nil(t, err)
+	vk, err := ParseVk(vkJson)
+	require.Nil(t, err)
+
+	v := Verify(vk, proof, pubSignals)
+	assert.True(t, v)
+
+	// to verify the proof with snarkjs:
 	// snarkjs verify --vk testdata/small/verification_key.json -p testdata/small/proof.json --pub testdata/small/public.json
 }
 
@@ -64,6 +73,31 @@ func TestBigCircuitGenerateProf(t *testing.T) {
 	err = ioutil.WriteFile("testdata/big/public.json", publicStr, 0644)
 	assert.Nil(t, err)
 
-	// to verify the proof:
+	// verify the proof
+	vkJson, err := ioutil.ReadFile("testdata/big/verification_key.json")
+	require.Nil(t, err)
+	vk, err := ParseVk(vkJson)
+	require.Nil(t, err)
+
+	v := Verify(vk, proof, pubSignals)
+	assert.True(t, v)
+
+	// to verify the proof with snarkjs:
 	// snarkjs verify --vk testdata/big/verification_key.json -p testdata/big/proof.json --pub testdata/big/public.json
+}
+
+func BenchmarkGenerateProof(b *testing.B) {
+	provingKeyJson, err := ioutil.ReadFile("testdata/big/proving_key.json")
+	require.Nil(b, err)
+	pk, err := ParsePk(provingKeyJson)
+	require.Nil(b, err)
+
+	witnessJson, err := ioutil.ReadFile("testdata/big/witness.json")
+	require.Nil(b, err)
+	w, err := ParseWitness(witnessJson)
+	require.Nil(b, err)
+
+	for i := 0; i < b.N; i++ {
+		GenerateProof(pk, w)
+	}
 }
