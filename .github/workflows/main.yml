@@ -14,7 +14,17 @@ jobs:
       uses: actions/setup-go@v1
       with:
         go-version: ${{ matrix.go-version }}
+    - name: Install Nodejs
+      uses: actions/setup-node@v1
+      with:
+        go-version: 10.x
+    - name: Install circom
+      run: npm install -g circom
+    - name: Install snarkjs
+      run: npm install -g snarkjs
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Test
-      run: go test ./...
+    - name: Compile circuits and execute Go tests
+      run: |
+        sh ./compile-circuits.sh
+        go test ./...
