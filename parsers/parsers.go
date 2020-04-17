@@ -1,4 +1,4 @@
-package gocircomprover
+package parsers
 
 import (
 	"bytes"
@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
+	"github.com/iden3/go-circom-prover-verifier/types"
 )
 
 // PkString is the equivalent to the Pk struct in string representation, containing the ProvingKey
@@ -53,14 +54,14 @@ type VkString struct {
 }
 
 // ParseWitness parses the json []byte data into the Witness struct
-func ParseWitness(wJson []byte) (Witness, error) {
+func ParseWitness(wJson []byte) (types.Witness, error) {
 	var ws WitnessString
 	err := json.Unmarshal(wJson, &ws)
 	if err != nil {
 		return nil, err
 	}
 
-	var w Witness
+	var w types.Witness
 	for i := 0; i < len(ws); i++ {
 		bi, err := stringToBigInt(ws[i])
 		if err != nil {
@@ -72,7 +73,7 @@ func ParseWitness(wJson []byte) (Witness, error) {
 }
 
 // ParsePk parses the json []byte data into the Pk struct
-func ParsePk(pkJson []byte) (*Pk, error) {
+func ParsePk(pkJson []byte) (*types.Pk, error) {
 	var pkStr PkString
 	err := json.Unmarshal(pkJson, &pkStr)
 	if err != nil {
@@ -82,8 +83,8 @@ func ParsePk(pkJson []byte) (*Pk, error) {
 	return pk, err
 }
 
-func pkStringToPk(ps PkString) (*Pk, error) {
-	var p Pk
+func pkStringToPk(ps PkString) (*types.Pk, error) {
+	var p types.Pk
 	var err error
 
 	p.A, err = arrayStringToG1(ps.A)
@@ -152,8 +153,8 @@ func pkStringToPk(ps PkString) (*Pk, error) {
 	return &p, nil
 }
 
-func proofStringToProof(pr ProofString) (*Proof, error) {
-	var p Proof
+func proofStringToProof(pr ProofString) (*types.Proof, error) {
+	var p types.Proof
 	var err error
 	p.A, err = stringToG1(pr.A)
 	if err != nil {
@@ -174,7 +175,7 @@ func proofStringToProof(pr ProofString) (*Proof, error) {
 }
 
 // ParseProof takes a json []byte and outputs the *Proof struct
-func ParseProof(pj []byte) (*Proof, error) {
+func ParseProof(pj []byte) (*types.Proof, error) {
 	var pr ProofString
 	err := json.Unmarshal(pj, &pr)
 	if err != nil {
@@ -203,7 +204,7 @@ func ParsePublicSignals(pj []byte) ([]*big.Int, error) {
 }
 
 // ParseVk takes a json []byte and outputs the *Vk struct
-func ParseVk(vj []byte) (*Vk, error) {
+func ParseVk(vj []byte) (*types.Vk, error) {
 	var vr VkString
 	err := json.Unmarshal(vj, &vr)
 	if err != nil {
@@ -213,8 +214,8 @@ func ParseVk(vj []byte) (*Vk, error) {
 	return v, err
 }
 
-func vkStringToVk(vr VkString) (*Vk, error) {
-	var v Vk
+func vkStringToVk(vr VkString) (*types.Vk, error) {
+	var v types.Vk
 	var err error
 	v.Alpha, err = stringToG1(vr.Alpha)
 	if err != nil {
@@ -464,7 +465,7 @@ func stringToG2(h [][]string) (*bn256.G2, error) {
 }
 
 // ProofToJson outputs the Proof i Json format
-func ProofToJson(p *Proof) ([]byte, error) {
+func ProofToJson(p *types.Proof) ([]byte, error) {
 	var ps ProofString
 	ps.A = make([]string, 3)
 	ps.B = make([][]string, 3)

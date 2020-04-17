@@ -1,10 +1,11 @@
-package gocircomprover
+package prover
 
 import (
 	"crypto/rand"
 	"math/big"
 
 	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
+	"github.com/iden3/go-circom-prover-verifier/types"
 )
 
 // Proof is the data structure of the Groth16 zkSNARK proof
@@ -54,8 +55,8 @@ func randBigInt() (*big.Int, error) {
 }
 
 // GenerateProof generates the Groth16 zkSNARK proof
-func GenerateProof(pk *Pk, w Witness) (*Proof, []*big.Int, error) {
-	var proof Proof
+func GenerateProof(pk *types.Pk, w types.Witness) (*types.Proof, []*big.Int, error) {
+	var proof types.Proof
 
 	r, err := randBigInt()
 	if err != nil {
@@ -105,7 +106,7 @@ func GenerateProof(pk *Pk, w Witness) (*Proof, []*big.Int, error) {
 	return &proof, pubSignals, nil
 }
 
-func calculateH(pk *Pk, w Witness) []*big.Int {
+func calculateH(pk *types.Pk, w types.Witness) []*big.Int {
 	m := pk.DomainSize
 	polAT := arrayOfZeroes(m)
 	polBT := arrayOfZeroes(m)

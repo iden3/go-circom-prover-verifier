@@ -1,4 +1,4 @@
-# go-circom-prover-verifier [![GoDoc](https://godoc.org/github.com/iden3/go-circom-prover-verifier?status.svg)](https://godoc.org/github.com/iden3/go-circom-prover-verifier) [![Go Report Card](https://goreportcard.com/badge/github.com/iden3/go-circom-prover-verifier)](https://goreportcard.com/report/github.com/iden3/go-circom-prover-verifier)
+# go-circom-prover-verifier [![GoDoc](https://godoc.org/github.com/iden3/go-circom-prover-verifier?status.svg)](https://godoc.org/github.com/iden3/go-circom-prover-verifier) [![Go Report Card](https://goreportcard.com/badge/github.com/iden3/go-circom-prover-verifier)](https://goreportcard.com/report/github.com/iden3/go-circom-prover-verifier) [![Test](https://github.com/iden3/go-circom-prover-verifier/workflows/Test/badge.svg)](https://github.com/iden3/go-circom-prover-verifier/actions?query=workflow%3ATest)
 
 Experimental Go implementation of the [Groth16 protocol](https://eprint.iacr.org/2016/260.pdf) zkSNARK prover & verifier compatible with [circom](https://github.com/iden3/circom).
 

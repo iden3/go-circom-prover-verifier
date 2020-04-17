@@ -1,4 +1,4 @@
-package gocircomprover
+package parsers
 
 import (
 	"testing"
