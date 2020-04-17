@@ -27,4 +27,6 @@ jobs:
     - name: Compile circuits and execute Go tests
       run: |
         sh ./compile-circuits.sh
+        go run cli/cli.go -prove -provingkey=testdata/small/proving_key.json -witness=testdata/small/witness.json -proof=testdata/small/proof.json -public=testdata/small/public.json
+        go run cli/cli.go -prove -provingkey=testdata/big/proving_key.json -witness=testdata/big/witness.json -proof=testdata/big/proof.json -public=testdata/big/public.json
         go test ./...

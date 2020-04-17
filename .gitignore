@@ -4,4 +4,4 @@ testdata/*/*.cpp
 testdata/*/*.sym
 testdata/*/*.r1cs
 !testdata/*/input.json
-
+cli/*.json

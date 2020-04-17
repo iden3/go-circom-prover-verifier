@@ -7,26 +7,76 @@ Using [bn256](https://github.com/ethereum/go-ethereum/tree/master/crypto/bn256/c
 
 ### Example
 
+- Generate Proof
 ```go
 // read ProvingKey & Witness files
-provingKeyJson, _ := ioutil.ReadFile("testdata/provingkey.json")
-witnessJson, _ := ioutil.ReadFile("testdata/witness.json")
+provingKeyJson, _ := ioutil.ReadFile("../testdata/small/proving_key.json")
+witnessJson, _ := ioutil.ReadFile("../testdata/small/witness.json")
 
 // parse Proving Key
-pk, _ := circomprover.ParseProvingKey(provingKeyJson)
+pk, _ := parsers.ParsePk(provingKeyJson)
 
 // parse Witness
-w, _ := circomprover.ParseWitness(witnessJson)
+w, _ := parsers.ParseWitness(witnessJson)
 
 // generate the proof
-proof, pubSignals, err := circomprover.GenerateProof(pk, w)
-assert.Nil(t, err)
+proof, pubSignals, _ := GenerateProof(pk, w)
 
-proofStr, err := circomprover.ProofToString(proof)
-assert.Nil(t, err)
-publicStr, err := json.Marshal(circomprover.ArrayBigIntToString(pubSignals)
-assert.Nil(t, err)
-
+// print proof & publicSignals
+proofStr, _ := parsers.ProofToJson(proof)
+publicStr, _ := json.Marshal(parsers.ArrayBigIntToString(pubSignals))
 fmt.Println(proofStr)
 fmt.Println(publicStr)
+```
+
+- Verify Proof
+```go
+// read proof & verificationKey & publicSignals
+proofJson, _ := ioutil.ReadFile("../testdata/big/proof.json")
+vkJson, _ := ioutil.ReadFile("../testdata/big/verification_key.json")
+publicJson, _ := ioutil.ReadFile("../testdata/big/public.json")
+
+// parse proof & verificationKey & publicSignals
+public, _ := parsers.ParsePublicSignals(publicJson)
+proof, _ := parsers.ParseProof(proofJson)
+vk, _ := parsers.ParseVk(vkJson)
+
+// verify the proof with the given verificationKey & publicSignals
+v := Verify(vk, proof, public)
+fmt.Println(v)
+```
+
+## CLI
+
+From the `cli` directory:
+
+- Show options
+```
+> go run cli.go -help
+go-circom-prover-verifier
+                 v0.0.1
+Usage of /tmp/go-build620318239/b001/exe/cli:
+  -proof string
+        proof path (default "proof.json")
+  -prove
+        prover mode
+  -provingkey string
+        provingKey path (default "proving_key.json")
+  -public string
+        public signals path (default "public.json")
+  -verificationkey string
+        verificationKey path (default "verification_key.json")
+  -verify
+        verifier mode
+  -witness string
+        witness path (default "witness.json")
+```
+
+- Prove
+```
+> go run cli.go -prove -provingkey=../testdata/small/proving_key.json -witness=../testdata/small/witness.json
+```
+- Verify
+```
+> go run cli.go -verify -verificationkey=../testdata/small/verification_key.json
 ```
