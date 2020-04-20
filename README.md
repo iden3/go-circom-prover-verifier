@@ -9,6 +9,14 @@ Using [bn256](https://github.com/ethereum/go-ethereum/tree/master/crypto/bn256/c
 
 - Generate Proof
 ```go
+import (
+  "github.com/iden3/go-circom-prover-verifier/parsers"
+  "github.com/iden3/go-circom-prover-verifier/prover"
+  "github.com/iden3/go-circom-prover-verifier/verifier"
+)
+
+[...]
+
 // read ProvingKey & Witness files
 provingKeyJson, _ := ioutil.ReadFile("../testdata/small/proving_key.json")
 witnessJson, _ := ioutil.ReadFile("../testdata/small/witness.json")
@@ -20,7 +28,7 @@ pk, _ := parsers.ParsePk(provingKeyJson)
 w, _ := parsers.ParseWitness(witnessJson)
 
 // generate the proof
-proof, pubSignals, _ := GenerateProof(pk, w)
+proof, pubSignals, _ := prover.GenerateProof(pk, w)
 
 // print proof & publicSignals
 proofStr, _ := parsers.ProofToJson(proof)
@@ -42,7 +50,7 @@ proof, _ := parsers.ParseProof(proofJson)
 vk, _ := parsers.ParseVk(vkJson)
 
 // verify the proof with the given verificationKey & publicSignals
-v := Verify(vk, proof, public)
+v := verifier.Verify(vk, proof, public)
 fmt.Println(v)
 ```
 

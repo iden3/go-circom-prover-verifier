@@ -6,6 +6,7 @@ import (
 
 	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
 	"github.com/iden3/go-circom-prover-verifier/types"
+	"github.com/iden3/go-iden3-crypto/utils"
 )
 
 // Proof is the data structure of the Groth16 zkSNARK proof
@@ -123,13 +124,18 @@ func calculateH(pk *types.Pk, w types.Witness) []*big.Int {
 			polCT[j] = fAdd(polCT[j], fMul(w[i], pk.PolsC[i][j]))
 		}
 	}
-	polAS := ifft(polAT)
-	polBS := ifft(polBT)
+	polATe := utils.BigIntArrayToElementArray(polAT)
+	polBTe := utils.BigIntArrayToElementArray(polBT)
+	polCTe := utils.BigIntArrayToElementArray(polCT)
 
-	polABS := polynomialMul(polAS, polBS)
-	polCS := ifft(polCT)
-	polABCS := polynomialSub(polABS, polCS)
+	polASe := ifft(polATe)
+	polBSe := ifft(polBTe)
+	polABSe := polynomialMulE(polASe, polBSe)
 
-	hS := polABCS[m:]
-	return hS
+	polCSe := ifft(polCTe)
+
+	polABCSe := polynomialSubE(polABSe, polCSe)
+
+	hSe := polABCSe[m:]
+	return ElementArrayToBigIntArray(hSe)
 }
