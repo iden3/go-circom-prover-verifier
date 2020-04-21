@@ -48,7 +48,7 @@ func (roots rootsT) setRoots(n int) {
 	}
 }
 
-func fft(roots rootsT, pall []*ff.Element, bits, offset, step int) []*ff.Element {
+func fftroots(roots rootsT, pall []*ff.Element, bits, offset, step int) []*ff.Element {
 	n := 1 << bits
 	if n == 1 {
 		return []*ff.Element{pall[offset]}
@@ -60,19 +60,18 @@ func fft(roots rootsT, pall []*ff.Element, bits, offset, step int) []*ff.Element
 	}
 
 	ndiv2 := n >> 1
-	p1 := fft(roots, pall, bits-1, offset, step*2)
-	p2 := fft(roots, pall, bits-1, offset+step, step*2)
+	p1 := fftroots(roots, pall, bits-1, offset, step*2)
+	p2 := fftroots(roots, pall, bits-1, offset+step, step*2)
 
 	out := make([]*ff.Element, n)
 	for i := 0; i < ndiv2; i++ {
-		// fmt.Println(i, len(roots.roots))
 		out[i] = ff.NewElement().Add(p1[i], ff.NewElement().Mul(roots.roots[bits][i], p2[i]))
 		out[i+ndiv2] = ff.NewElement().Sub(p1[i], ff.NewElement().Mul(roots.roots[bits][i], p2[i]))
 	}
 	return out
 }
 
-func ifft(p []*ff.Element) []*ff.Element {
+func fft(p []*ff.Element) []*ff.Element {
 	if len(p) <= 1 {
 		return p
 	}
@@ -81,7 +80,14 @@ func ifft(p []*ff.Element) []*ff.Element {
 	roots.setRoots(int(bits))
 	m := 1 << int(bits)
 	ep := extend(p, m)
-	res := fft(roots, ep, int(bits), 0, 1)
+	res := fftroots(roots, ep, int(bits), 0, 1)
+	return res
+}
+
+func ifft(p []*ff.Element) []*ff.Element {
+	res := fft(p)
+	bits := math.Log2(float64(len(p)-1)) + 1
+	m := 1 << int(bits)
 
 	twoinvm := ff.NewElement().SetBigInt(fInv(fMul(big.NewInt(1), big.NewInt(int64(m)))))
 

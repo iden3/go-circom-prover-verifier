@@ -2,10 +2,12 @@ package prover
 
 import (
 	"crypto/rand"
+	"math"
 	"math/big"
 
 	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
 	"github.com/iden3/go-circom-prover-verifier/types"
+	"github.com/iden3/go-iden3-crypto/ff"
 	"github.com/iden3/go-iden3-crypto/utils"
 )
 
@@ -111,7 +113,6 @@ func calculateH(pk *types.Pk, w types.Witness) []*big.Int {
 	m := pk.DomainSize
 	polAT := arrayOfZeroes(m)
 	polBT := arrayOfZeroes(m)
-	polCT := arrayOfZeroes(m)
 
 	for i := 0; i < pk.NVars; i++ {
 		for j := range pk.PolsA[i] {
@@ -120,22 +121,32 @@ func calculateH(pk *types.Pk, w types.Witness) []*big.Int {
 		for j := range pk.PolsB[i] {
 			polBT[j] = fAdd(polBT[j], fMul(w[i], pk.PolsB[i][j]))
 		}
-		for j := range pk.PolsC[i] {
-			polCT[j] = fAdd(polCT[j], fMul(w[i], pk.PolsC[i][j]))
-		}
 	}
 	polATe := utils.BigIntArrayToElementArray(polAT)
 	polBTe := utils.BigIntArrayToElementArray(polBT)
-	polCTe := utils.BigIntArrayToElementArray(polCT)
 
 	polASe := ifft(polATe)
 	polBSe := ifft(polBTe)
-	polABSe := polynomialMulE(polASe, polBSe)
 
-	polCSe := ifft(polCTe)
+	r := int(math.Log2(float64(m))) + 1
+	roots := newRootsT()
+	roots.setRoots(r)
+	for i := 0; i < len(polASe); i++ {
+		polASe[i] = ff.NewElement().Mul(polASe[i], roots.roots[r][i])
+		polBSe[i] = ff.NewElement().Mul(polBSe[i], roots.roots[r][i])
+	}
 
-	polABCSe := polynomialSubE(polABSe, polCSe)
+	polATodd := fft(polASe)
+	polBTodd := fft(polBSe)
 
-	hSe := polABCSe[m:]
+	polABT := arrayOfZeroesE(len(polASe) * 2)
+	for i := 0; i < len(polASe); i++ {
+		polABT[2*i] = ff.NewElement().Mul(polATe[i], polBTe[i])
+		polABT[2*i+1] = ff.NewElement().Mul(polATodd[i], polBTodd[i])
+	}
+
+	hSeFull := ifft(polABT)
+
+	hSe := hSeFull[m:]
 	return ElementArrayToBigIntArray(hSe)
 }

@@ -2,6 +2,7 @@ package prover
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"math/big"
 	"testing"
@@ -13,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSmallCircuitGenerateProf(t *testing.T) {
+func TestSmallCircuitGenerateProof(t *testing.T) {
 	provingKeyJson, err := ioutil.ReadFile("../testdata/small/proving_key.json")
 	require.Nil(t, err)
 	pk, err := parsers.ParsePk(provingKeyJson)
@@ -52,7 +53,7 @@ func TestSmallCircuitGenerateProf(t *testing.T) {
 	// snarkjs verify --vk testdata/small/verification_key.json -p testdata/small/proof.json --pub testdata/small/public.json
 }
 
-func TestBigCircuitGenerateProf(t *testing.T) {
+func TestBigCircuitGenerateProof(t *testing.T) {
 	provingKeyJson, err := ioutil.ReadFile("../testdata/big/proving_key.json")
 	require.Nil(t, err)
 	pk, err := parsers.ParsePk(provingKeyJson)
@@ -87,6 +88,50 @@ func TestBigCircuitGenerateProf(t *testing.T) {
 
 	// to verify the proof with snarkjs:
 	// snarkjs verify --vk testdata/big/verification_key.json -p testdata/big/proof.json --pub testdata/big/public.json
+}
+
+func TestIdStateCircuitGenerateProof(t *testing.T) {
+	// this test is to execute the proof generation for a bigger circuit
+	// (arround 22500 constraints)
+	//
+	// to see the time needed to execute this
+	// test Will need the ../testdata/idstate-circuit compiled &
+	// trustedsetup files (generated in
+	// https://github.com/iden3/go-zksnark-full-flow-example)
+	if false {
+		fmt.Println("TestIdStateCircuitGenerateProof activated")
+		provingKeyJson, err := ioutil.ReadFile("../testdata/idstate-circuit/proving_key.json")
+		require.Nil(t, err)
+		pk, err := parsers.ParsePk(provingKeyJson)
+		require.Nil(t, err)
+
+		witnessJson, err := ioutil.ReadFile("../testdata/idstate-circuit/witness.json")
+		require.Nil(t, err)
+		w, err := parsers.ParseWitness(witnessJson)
+		require.Nil(t, err)
+
+		proof, pubSignals, err := GenerateProof(pk, w)
+		assert.Nil(t, err)
+
+		proofStr, err := parsers.ProofToJson(proof)
+		assert.Nil(t, err)
+
+		err = ioutil.WriteFile("../testdata/idstate-circuit/proof.json", proofStr, 0644)
+		assert.Nil(t, err)
+		publicStr, err := json.Marshal(parsers.ArrayBigIntToString(pubSignals))
+		assert.Nil(t, err)
+		err = ioutil.WriteFile("../testdata/idstate-circuit/public.json", publicStr, 0644)
+		assert.Nil(t, err)
+
+		// verify the proof
+		vkJson, err := ioutil.ReadFile("../testdata/idstate-circuit/verification_key.json")
+		require.Nil(t, err)
+		vk, err := parsers.ParseVk(vkJson)
+		require.Nil(t, err)
+
+		v := verifier.Verify(vk, proof, pubSignals)
+		assert.True(t, v)
+	}
 }
 
 func BenchmarkGenerateProof(b *testing.B) {
