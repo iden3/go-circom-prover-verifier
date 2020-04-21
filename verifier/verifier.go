@@ -5,7 +5,6 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/crypto/bn256"
-	"github.com/iden3/go-circom-prover-verifier/prover"
 	"github.com/iden3/go-circom-prover-verifier/types"
 )
 
@@ -26,7 +25,7 @@ func Verify(vk *types.Vk, proof *types.Proof, inputs []*big.Int) bool {
 	vkX := new(bn256.G1).ScalarBaseMult(big.NewInt(0))
 	for i := 0; i < len(inputs); i++ {
 		// check input inside field
-		if inputs[0].Cmp(prover.R) != -1 {
+		if inputs[0].Cmp(types.R) != -1 {
 			return false
 		}
 		vkX = new(bn256.G1).Add(vkX, new(bn256.G1).ScalarMult(vk.IC[i+1], inputs[i]))

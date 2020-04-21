@@ -41,18 +41,15 @@ type Pk struct {
 // Witness contains the witness
 type Witness []*big.Int
 
-// R is the mod of the finite field
-var R, _ = new(big.Int).SetString("21888242871839275222246405745257275088548364400416034343698204186575808495617", 10)
-
 func randBigInt() (*big.Int, error) {
-	maxbits := R.BitLen()
+	maxbits := types.R.BitLen()
 	b := make([]byte, (maxbits/8)-1)
 	_, err := rand.Read(b)
 	if err != nil {
 		return nil, err
 	}
 	r := new(big.Int).SetBytes(b)
-	rq := new(big.Int).Mod(r, R)
+	rq := new(big.Int).Mod(r, types.R)
 
 	return rq, nil
 }
@@ -101,7 +98,7 @@ func GenerateProof(pk *types.Pk, w types.Witness) (*types.Proof, []*big.Int, err
 	}
 	proof.C = new(bn256.G1).Add(proof.C, new(bn256.G1).ScalarMult(proof.A, s))
 	proof.C = new(bn256.G1).Add(proof.C, new(bn256.G1).ScalarMult(proofBG1, r))
-	rsneg := new(big.Int).Mod(new(big.Int).Neg(new(big.Int).Mul(r, s)), R) // fAdd & fMul
+	rsneg := new(big.Int).Mod(new(big.Int).Neg(new(big.Int).Mul(r, s)), types.R) // fAdd & fMul
 	proof.C = new(bn256.G1).Add(proof.C, new(bn256.G1).ScalarMult(pk.VkDelta1, rsneg))
 
 	pubSignals := w[1 : pk.NPublic+1]
@@ -148,5 +145,5 @@ func calculateH(pk *types.Pk, w types.Witness) []*big.Int {
 	hSeFull := ifft(polABT)
 
 	hSe := hSeFull[m:]
-	return ElementArrayToBigIntArray(hSe)
+	return utils.ElementArrayToBigIntArray(hSe)
 }

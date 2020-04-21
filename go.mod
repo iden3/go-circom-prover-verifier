@@ -1,13 +1,9 @@
-module go-circom-prover-verifier
+module github.com/iden3/go-circom-prover-verifier
 
 go 1.14
 
-replace github.com/iden3/go-circom-prover-verifier => ./
-
 require (
-	github.com/ethereum/go-ethereum v1.9.12
-	github.com/iden3/go-circom-prover-verifier v0.0.0-00010101000000-000000000000
-	github.com/iden3/go-iden3-crypto v0.0.4
-	github.com/stretchr/testify v1.5.1
-	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4
+	github.com/ethereum/go-ethereum v1.9.13
+	github.com/iden3/go-iden3-crypto v0.0.5-0.20200421133134-14c3144613d4
+	github.com/stretchr/testify v1.4.0
 )

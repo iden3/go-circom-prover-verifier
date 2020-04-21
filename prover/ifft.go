@@ -4,6 +4,7 @@ import (
 	"math"
 	"math/big"
 
+	"github.com/iden3/go-circom-prover-verifier/types"
 	"github.com/iden3/go-iden3-crypto/ff"
 )
 
@@ -15,7 +16,7 @@ type rootsT struct {
 func newRootsT() rootsT {
 	var roots rootsT
 
-	rem := new(big.Int).Sub(R, big.NewInt(1))
+	rem := new(big.Int).Sub(types.R, big.NewInt(1))
 	s := 0
 	for rem.Bit(0) == 0 { // rem.Bit==0 when even
 		s++

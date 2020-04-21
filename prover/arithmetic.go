@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"math/big"
 
+	"github.com/iden3/go-circom-prover-verifier/types"
 	"github.com/iden3/go-iden3-crypto/ff"
 )
 
@@ -24,30 +25,30 @@ func arrayOfZeroesE(n int) []*ff.Element {
 
 func fAdd(a, b *big.Int) *big.Int {
 	ab := new(big.Int).Add(a, b)
-	return new(big.Int).Mod(ab, R)
+	return new(big.Int).Mod(ab, types.R)
 }
 
 func fSub(a, b *big.Int) *big.Int {
 	ab := new(big.Int).Sub(a, b)
-	return new(big.Int).Mod(ab, R)
+	return new(big.Int).Mod(ab, types.R)
 }
 
 func fMul(a, b *big.Int) *big.Int {
 	ab := new(big.Int).Mul(a, b)
-	return new(big.Int).Mod(ab, R)
+	return new(big.Int).Mod(ab, types.R)
 }
 
 func fDiv(a, b *big.Int) *big.Int {
-	ab := new(big.Int).Mul(a, new(big.Int).ModInverse(b, R))
-	return new(big.Int).Mod(ab, R)
+	ab := new(big.Int).Mul(a, new(big.Int).ModInverse(b, types.R))
+	return new(big.Int).Mod(ab, types.R)
 }
 
 func fNeg(a *big.Int) *big.Int {
-	return new(big.Int).Mod(new(big.Int).Neg(a), R)
+	return new(big.Int).Mod(new(big.Int).Neg(a), types.R)
 }
 
 func fInv(a *big.Int) *big.Int {
-	return new(big.Int).ModInverse(a, R)
+	return new(big.Int).ModInverse(a, types.R)
 }
 
 func fExp(base *big.Int, e *big.Int) *big.Int {
@@ -145,16 +146,4 @@ func polynomialDivE(a, b []*ff.Element) ([]*ff.Element, []*ff.Element) {
 		rem = aux2[:len(aux2)-1]
 	}
 	return r, rem
-}
-
-// once https://github.com/iden3/go-iden3-crypto/pull/22 is merged, use the fucntion from there
-func ElementArrayToBigIntArray(e []*ff.Element) []*big.Int {
-	var o []*big.Int
-	for i := range e {
-		ei := e[i]
-		bi := big.NewInt(0)
-		ei.ToBigIntRegular(bi)
-		o = append(o, bi)
-	}
-	return o
 }

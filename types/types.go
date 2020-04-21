@@ -6,6 +6,9 @@ import (
 	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
 )
 
+// R is the mod of the finite field
+var R, _ = new(big.Int).SetString("21888242871839275222246405745257275088548364400416034343698204186575808495617", 10)
+
 // Proof is the data structure of the Groth16 zkSNARK proof
 type Proof struct {
 	A *bn256.G1

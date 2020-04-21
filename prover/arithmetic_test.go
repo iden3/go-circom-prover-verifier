@@ -10,7 +10,7 @@ import (
 )
 
 func randBI() *big.Int {
-	maxbits := 253
+	maxbits := 256
 	b := make([]byte, (maxbits/8)-1)
 	_, err := rand.Read(b)
 	if err != nil {
