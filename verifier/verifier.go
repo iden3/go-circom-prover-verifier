@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/crypto/bn256"
+	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
 	"github.com/iden3/go-circom-prover-verifier/types"
 )
 
