@@ -27,6 +27,10 @@ func TestVerify1(t *testing.T) {
 
 	v := Verify(vk, proof, public)
 	assert.True(t, v)
+
+	// Verify again to check that `Verify` hasn't mutated the inputs
+	v = Verify(vk, proof, public)
+	assert.True(t, v)
 }
 
 func BenchmarkVerify(b *testing.B) {
