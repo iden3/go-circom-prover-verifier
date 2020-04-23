@@ -32,7 +32,7 @@ func Verify(vk *types.Vk, proof *types.Proof, inputs []*big.Int) bool {
 	}
 	vkX = new(bn256.G1).Add(vkX, vk.IC[0])
 
-	g1 := []*bn256.G1{proof.A, vk.Alpha.Neg(vk.Alpha), vkX.Neg(vkX), proof.C.Neg(proof.C)}
+	g1 := []*bn256.G1{proof.A, new(bn256.G1).Neg(vk.Alpha), vkX.Neg(vkX), new(bn256.G1).Neg(proof.C)}
 	g2 := []*bn256.G2{proof.B, vk.Beta, vk.Gamma, vk.Delta}
 	return bn256.PairingCheck(g1, g2)
 }
