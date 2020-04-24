@@ -3,5 +3,6 @@ testdata/*/*.wasm
 testdata/*/*.cpp
 testdata/*/*.sym
 testdata/*/*.r1cs
+testdata/*/*.sol
 !testdata/*/input.json
 cli/*.json

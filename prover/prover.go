@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"math"
 	"math/big"
+	"sync"
 
 	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
 	"github.com/iden3/go-circom-prover-verifier/types"
@@ -72,30 +73,57 @@ func GenerateProof(pk *types.Pk, w types.Witness) (*types.Proof, []*big.Int, err
 	proof.C = new(bn256.G1).ScalarBaseMult(big.NewInt(0))
 	proofBG1 := new(bn256.G1).ScalarBaseMult(big.NewInt(0))
 
-	for i := 0; i < pk.NVars; i++ {
-		proof.A = new(bn256.G1).Add(proof.A, new(bn256.G1).ScalarMult(pk.A[i], w[i]))
-		proof.B = new(bn256.G2).Add(proof.B, new(bn256.G2).ScalarMult(pk.B2[i], w[i]))
-		proofBG1 = new(bn256.G1).Add(proofBG1, new(bn256.G1).ScalarMult(pk.B1[i], w[i]))
-	}
-
-	for i := pk.NPublic + 1; i < pk.NVars; i++ {
-		proof.C = new(bn256.G1).Add(proof.C, new(bn256.G1).ScalarMult(pk.C[i], w[i]))
-	}
-
-	proof.A = new(bn256.G1).Add(proof.A, pk.VkAlpha1)
-	proof.A = new(bn256.G1).Add(proof.A, new(bn256.G1).ScalarMult(pk.VkDelta1, r))
-
-	proof.B = new(bn256.G2).Add(proof.B, pk.VkBeta2)
-	proof.B = new(bn256.G2).Add(proof.B, new(bn256.G2).ScalarMult(pk.VkDelta2, s))
-
-	proofBG1 = new(bn256.G1).Add(proofBG1, pk.VkBeta1)
-	proofBG1 = new(bn256.G1).Add(proofBG1, new(bn256.G1).ScalarMult(pk.VkDelta1, s))
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(4)
+	go func(wg *sync.WaitGroup) {
+		for i := 0; i < pk.NVars; i++ {
+			proof.A = new(bn256.G1).Add(proof.A, new(bn256.G1).ScalarMult(pk.A[i], w[i]))
+		}
+		wg.Done()
+	}(&waitGroup)
+	go func(wg *sync.WaitGroup) {
+		for i := 0; i < pk.NVars; i++ {
+			proof.B = new(bn256.G2).Add(proof.B, new(bn256.G2).ScalarMult(pk.B2[i], w[i]))
+		}
+		wg.Done()
+	}(&waitGroup)
+	go func(wg *sync.WaitGroup) {
+		for i := 0; i < pk.NVars; i++ {
+			proofBG1 = new(bn256.G1).Add(proofBG1, new(bn256.G1).ScalarMult(pk.B1[i], w[i]))
+		}
+		wg.Done()
+	}(&waitGroup)
+	go func(wg *sync.WaitGroup) {
+		for i := pk.NPublic + 1; i < pk.NVars; i++ {
+			proof.C = new(bn256.G1).Add(proof.C, new(bn256.G1).ScalarMult(pk.C[i], w[i]))
+		}
+		wg.Done()
+	}(&waitGroup)
+	waitGroup.Wait()
 
 	h := calculateH(pk, w)
 
-	for i := 0; i < len(h); i++ {
-		proof.C = new(bn256.G1).Add(proof.C, new(bn256.G1).ScalarMult(pk.HExps[i], h[i]))
-	}
+	var waitGroup2 sync.WaitGroup
+	waitGroup2.Add(2)
+	go func(wg *sync.WaitGroup) {
+		proof.A = new(bn256.G1).Add(proof.A, pk.VkAlpha1)
+		proof.A = new(bn256.G1).Add(proof.A, new(bn256.G1).ScalarMult(pk.VkDelta1, r))
+
+		proof.B = new(bn256.G2).Add(proof.B, pk.VkBeta2)
+		proof.B = new(bn256.G2).Add(proof.B, new(bn256.G2).ScalarMult(pk.VkDelta2, s))
+
+		proofBG1 = new(bn256.G1).Add(proofBG1, pk.VkBeta1)
+		proofBG1 = new(bn256.G1).Add(proofBG1, new(bn256.G1).ScalarMult(pk.VkDelta1, s))
+		wg.Done()
+	}(&waitGroup2)
+	go func(wg *sync.WaitGroup) {
+		for i := 0; i < len(h); i++ {
+			proof.C = new(bn256.G1).Add(proof.C, new(bn256.G1).ScalarMult(pk.HExps[i], h[i]))
+		}
+		wg.Done()
+	}(&waitGroup2)
+	waitGroup2.Wait()
+
 	proof.C = new(bn256.G1).Add(proof.C, new(bn256.G1).ScalarMult(proof.A, s))
 	proof.C = new(bn256.G1).Add(proof.C, new(bn256.G1).ScalarMult(proofBG1, r))
 	rsneg := new(big.Int).Mod(new(big.Int).Neg(new(big.Int).Mul(r, s)), types.R) // fAdd & fMul

@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/iden3/go-circom-prover-verifier/parsers"
 	"github.com/iden3/go-circom-prover-verifier/types"
@@ -27,8 +28,10 @@ func TestSmallCircuitGenerateProof(t *testing.T) {
 
 	assert.Equal(t, types.Witness{big.NewInt(1), big.NewInt(33), big.NewInt(3), big.NewInt(11)}, w)
 
+	beforeT := time.Now()
 	proof, pubSignals, err := GenerateProof(pk, w)
 	assert.Nil(t, err)
+	fmt.Println("proof generation time elapsed:", time.Since(beforeT))
 
 	proofStr, err := parsers.ProofToJson(proof)
 	assert.Nil(t, err)
@@ -64,8 +67,10 @@ func TestBigCircuitGenerateProof(t *testing.T) {
 	w, err := parsers.ParseWitness(witnessJson)
 	require.Nil(t, err)
 
+	beforeT := time.Now()
 	proof, pubSignals, err := GenerateProof(pk, w)
 	assert.Nil(t, err)
+	fmt.Println("proof generation time elapsed:", time.Since(beforeT))
 
 	proofStr, err := parsers.ProofToJson(proof)
 	assert.Nil(t, err)
@@ -99,7 +104,7 @@ func TestIdStateCircuitGenerateProof(t *testing.T) {
 	// trustedsetup files (generated in
 	// https://github.com/iden3/go-zksnark-full-flow-example)
 	if false {
-		fmt.Println("TestIdStateCircuitGenerateProof activated")
+		fmt.Println("\nTestIdStateCircuitGenerateProof activated")
 		provingKeyJson, err := ioutil.ReadFile("../testdata/idstate-circuit/proving_key.json")
 		require.Nil(t, err)
 		pk, err := parsers.ParsePk(provingKeyJson)
@@ -110,8 +115,10 @@ func TestIdStateCircuitGenerateProof(t *testing.T) {
 		w, err := parsers.ParseWitness(witnessJson)
 		require.Nil(t, err)
 
+		beforeT := time.Now()
 		proof, pubSignals, err := GenerateProof(pk, w)
 		assert.Nil(t, err)
+		fmt.Println("proof generation time elapsed:", time.Since(beforeT))
 
 		proofStr, err := parsers.ProofToJson(proof)
 		assert.Nil(t, err)
