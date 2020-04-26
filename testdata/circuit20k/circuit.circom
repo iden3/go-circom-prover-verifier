@@ -1,4 +1,4 @@
-template A(n) {
+template TestConstraints(n) {
   signal input in;
   signal output out;
 
@@ -11,4 +11,4 @@ template A(n) {
   out <== intermediate[n-1];
 }
 
-component main = A(1000); // bigger takes too much time on generating trusted setup
+component main = TestConstraints(20000);

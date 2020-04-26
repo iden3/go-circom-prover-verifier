@@ -26,7 +26,7 @@ jobs:
       uses: actions/checkout@v2
     - name: Compile circuits and execute Go tests
       run: |
-        sh ./compile-circuits.sh
-        go run cli/cli.go -prove -provingkey=testdata/small/proving_key.json -witness=testdata/small/witness.json -proof=testdata/small/proof.json -public=testdata/small/public.json
-        go run cli/cli.go -prove -provingkey=testdata/big/proving_key.json -witness=testdata/big/witness.json -proof=testdata/big/proof.json -public=testdata/big/public.json
+        cd testdata && sh ./compile-circuits.sh && cd ..
+        go run cli/cli.go -prove -provingkey=testdata/circuit1k/proving_key.json -witness=testdata/circuit1k/witness.json -proof=testdata/circuit1k/proof.json -public=testdata/circuit1k/public.json
+        go run cli/cli.go -prove -provingkey=testdata/circuit5k/proving_key.json -witness=testdata/circuit5k/witness.json -proof=testdata/circuit5k/proof.json -public=testdata/circuit5k/public.json
         go test ./...

@@ -10,12 +10,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestVerify1(t *testing.T) {
-	proofJson, err := ioutil.ReadFile("../testdata/big/proof.json")
+func TestVerify(t *testing.T) {
+	testVerifyCircuit(t, "circuit1k")
+	testVerifyCircuit(t, "circuit5k")
+	// testVerifyCircuit(t, "circuit10k")
+	// testVerifyCircuit(t, "circuit20k")
+}
+
+func testVerifyCircuit(t *testing.T, circuit string) {
+	proofJson, err := ioutil.ReadFile("../testdata/" + circuit + "/proof.json")
 	require.Nil(t, err)
-	vkJson, err := ioutil.ReadFile("../testdata/big/verification_key.json")
+	vkJson, err := ioutil.ReadFile("../testdata/" + circuit + "/verification_key.json")
 	require.Nil(t, err)
-	publicJson, err := ioutil.ReadFile("../testdata/big/public.json")
+	publicJson, err := ioutil.ReadFile("../testdata/" + circuit + "/public.json")
 	require.Nil(t, err)
 
 	public, err := parsers.ParsePublicSignals(publicJson)
@@ -34,11 +41,12 @@ func TestVerify1(t *testing.T) {
 }
 
 func BenchmarkVerify(b *testing.B) {
-	proofJson, err := ioutil.ReadFile("../testdata/big/proof.json")
+	// benchmark with circuit2 (10000 constraints)
+	proofJson, err := ioutil.ReadFile("../testdata/circuit2/proof.json")
 	require.Nil(b, err)
-	vkJson, err := ioutil.ReadFile("../testdata/big/verification_key.json")
+	vkJson, err := ioutil.ReadFile("../testdata/circuit2/verification_key.json")
 	require.Nil(b, err)
-	publicJson, err := ioutil.ReadFile("../testdata/big/public.json")
+	publicJson, err := ioutil.ReadFile("../testdata/circuit2/public.json")
 	require.Nil(b, err)
 
 	public, err := parsers.ParsePublicSignals(publicJson)

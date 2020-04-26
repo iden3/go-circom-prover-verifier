@@ -4,5 +4,5 @@ testdata/*/*.cpp
 testdata/*/*.sym
 testdata/*/*.r1cs
 testdata/*/*.sol
-!testdata/*/input.json
+!testdata/*/inputs.json
 cli/*.json
