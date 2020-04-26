@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"time"
 
 	"github.com/iden3/go-circom-prover-verifier/parsers"
 	"github.com/iden3/go-circom-prover-verifier/prover"
@@ -46,6 +47,8 @@ func main() {
 
 func cmdProve(provingKeyPath, witnessPath, proofPath, publicPath string) error {
 	fmt.Println("zkSNARK Groth16 prover")
+
+	fmt.Println("Reading proving key file:", provingKeyPath)
 	provingKeyJson, err := ioutil.ReadFile(provingKeyPath)
 	if err != nil {
 		return err
@@ -55,6 +58,7 @@ func cmdProve(provingKeyPath, witnessPath, proofPath, publicPath string) error {
 		return err
 	}
 
+	fmt.Println("Reading witness file:", witnessPath)
 	witnessJson, err := ioutil.ReadFile(witnessPath)
 	if err != nil {
 		return err
@@ -64,10 +68,13 @@ func cmdProve(provingKeyPath, witnessPath, proofPath, publicPath string) error {
 		return err
 	}
 
+	fmt.Println("Generating the proof")
+	beforeT := time.Now()
 	proof, pubSignals, err := prover.GenerateProof(pk, w)
 	if err != nil {
 		return err
 	}
+	fmt.Println("proof generation time elapsed:", time.Since(beforeT))
 
 	proofStr, err := parsers.ProofToJson(proof)
 	if err != nil {
