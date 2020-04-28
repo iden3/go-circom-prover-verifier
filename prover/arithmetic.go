@@ -4,28 +4,46 @@ import (
 	"bytes"
 	"math/big"
 
+	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
 	"github.com/iden3/go-circom-prover-verifier/types"
 	"github.com/iden3/go-iden3-crypto/ff"
 )
 
 func arrayOfZeroes(n int) []*big.Int {
-	var r []*big.Int
+	r := make([]*big.Int, n)
 	for i := 0; i < n; i++ {
-		r = append(r, new(big.Int).SetInt64(0))
+		r[i] = new(big.Int).SetInt64(0)
 	}
-	return r
+	return r[:]
 }
+
 func arrayOfZeroesE(n int) []*ff.Element {
-	var r []*ff.Element
+	r := make([]*ff.Element, n)
 	for i := 0; i < n; i++ {
-		r = append(r, ff.NewElement())
+		r[i] = ff.NewElement()
 	}
-	return r
+	return r[:]
+}
+
+func arrayOfZeroesG1(n int) []*bn256.G1 {
+	r := make([]*bn256.G1, n)
+	for i := 0; i < n; i++ {
+		r[i] = new(bn256.G1).ScalarBaseMult(big.NewInt(0))
+	}
+	return r[:]
+}
+
+func arrayOfZeroesG2(n int) []*bn256.G2 {
+	r := make([]*bn256.G2, n)
+	for i := 0; i < n; i++ {
+		r[i] = new(bn256.G2).ScalarBaseMult(big.NewInt(0))
+	}
+	return r[:]
 }
 
 func fAdd(a, b *big.Int) *big.Int {
 	ab := new(big.Int).Add(a, b)
-	return new(big.Int).Mod(ab, types.R)
+	return ab.Mod(ab, types.R)
 }
 
 func fSub(a, b *big.Int) *big.Int {
@@ -35,7 +53,7 @@ func fSub(a, b *big.Int) *big.Int {
 
 func fMul(a, b *big.Int) *big.Int {
 	ab := new(big.Int).Mul(a, b)
-	return new(big.Int).Mod(ab, types.R)
+	return ab.Mod(ab, types.R)
 }
 
 func fDiv(a, b *big.Int) *big.Int {
@@ -62,7 +80,7 @@ func fExp(base *big.Int, e *big.Int) *big.Int {
 			res = fMul(res, exp)
 		}
 		exp = fMul(exp, exp)
-		rem = new(big.Int).Rsh(rem, 1)
+		rem.Rsh(rem, 1)
 	}
 	return res
 }

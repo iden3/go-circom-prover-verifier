@@ -4,11 +4,11 @@ import (
 	"crypto/rand"
 	"math"
 	"math/big"
+	"runtime"
 	"sync"
 
 	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
 	"github.com/iden3/go-circom-prover-verifier/types"
-	"github.com/iden3/go-iden3-crypto/ff"
 	"github.com/iden3/go-iden3-crypto/utils"
 )
 
@@ -68,66 +68,79 @@ func GenerateProof(pk *types.Pk, w types.Witness) (*types.Proof, []*big.Int, err
 		return nil, nil, err
 	}
 
-	proof.A = new(bn256.G1).ScalarBaseMult(big.NewInt(0))
-	proof.B = new(bn256.G2).ScalarBaseMult(big.NewInt(0))
-	proof.C = new(bn256.G1).ScalarBaseMult(big.NewInt(0))
-	proofBG1 := new(bn256.G1).ScalarBaseMult(big.NewInt(0))
+	// BEGIN PAR
+	println("NVars", pk.NVars)
+	numcpu := runtime.NumCPU()
 
-	var wg sync.WaitGroup
-	wg.Add(4)
-	go func() {
-		for i := 0; i < pk.NVars; i++ {
-			proof.A = new(bn256.G1).Add(proof.A, new(bn256.G1).ScalarMult(pk.A[i], w[i]))
-		}
-		wg.Done()
-	}()
-	go func() {
-		for i := 0; i < pk.NVars; i++ {
-			proof.B = new(bn256.G2).Add(proof.B, new(bn256.G2).ScalarMult(pk.B2[i], w[i]))
-		}
-		wg.Done()
-	}()
-	go func() {
-		for i := 0; i < pk.NVars; i++ {
-			proofBG1 = new(bn256.G1).Add(proofBG1, new(bn256.G1).ScalarMult(pk.B1[i], w[i]))
-		}
-		wg.Done()
-	}()
-	go func() {
-		for i := pk.NPublic + 1; i < pk.NVars; i++ {
-			proof.C = new(bn256.G1).Add(proof.C, new(bn256.G1).ScalarMult(pk.C[i], w[i]))
-		}
-		wg.Done()
-	}()
-	wg.Wait()
+	proofA := arrayOfZeroesG1(numcpu)
+	proofB := arrayOfZeroesG2(numcpu)
+	proofC := arrayOfZeroesG1(numcpu)
+	proofBG1 := arrayOfZeroesG1(numcpu)
+	var wg1 sync.WaitGroup
+	wg1.Add(numcpu)
+	for _cpu, _ranges := range ranges(pk.NVars, numcpu) {
+		// split 1
+		go func(cpu int, ranges [2]int) {
+			for i := ranges[0]; i < ranges[1]; i++ {
+				proofA[cpu].Add(proofA[cpu], new(bn256.G1).ScalarMult(pk.A[i], w[i]))
+				proofB[cpu].Add(proofB[cpu], new(bn256.G2).ScalarMult(pk.B2[i], w[i]))
+				proofBG1[cpu].Add(proofBG1[cpu], new(bn256.G1).ScalarMult(pk.B1[i], w[i]))
+				if i >= pk.NPublic+1 {
+					proofC[cpu].Add(proofC[cpu], new(bn256.G1).ScalarMult(pk.C[i], w[i]))
+				}
+			}
+			wg1.Done()
+		}(_cpu, _ranges)
+	}
+	wg1.Wait()
+	// join 1
+	for cpu := 1; cpu < numcpu; cpu++ {
+		proofA[0].Add(proofA[0], proofA[cpu])
+		proofB[0].Add(proofB[0], proofB[cpu])
+		proofC[0].Add(proofC[0], proofC[cpu])
+		proofBG1[0].Add(proofBG1[0], proofBG1[cpu])
+	}
+	proof.A = proofA[0]
+	proof.B = proofB[0]
+	proof.C = proofC[0]
+	// END PAR
 
 	h := calculateH(pk, w)
 
+	println("len(h)", len(h))
+
+	proof.A.Add(proof.A, pk.VkAlpha1)
+	proof.A.Add(proof.A, new(bn256.G1).ScalarMult(pk.VkDelta1, r))
+
+	proof.B.Add(proof.B, pk.VkBeta2)
+	proof.B.Add(proof.B, new(bn256.G2).ScalarMult(pk.VkDelta2, s))
+
+	proofBG1[0].Add(proofBG1[0], pk.VkBeta1)
+	proofBG1[0].Add(proofBG1[0], new(bn256.G1).ScalarMult(pk.VkDelta1, s))
+
+	proofC = arrayOfZeroesG1(numcpu)
 	var wg2 sync.WaitGroup
-	wg2.Add(2)
-	go func() {
-		proof.A = new(bn256.G1).Add(proof.A, pk.VkAlpha1)
-		proof.A = new(bn256.G1).Add(proof.A, new(bn256.G1).ScalarMult(pk.VkDelta1, r))
-
-		proof.B = new(bn256.G2).Add(proof.B, pk.VkBeta2)
-		proof.B = new(bn256.G2).Add(proof.B, new(bn256.G2).ScalarMult(pk.VkDelta2, s))
-
-		proofBG1 = new(bn256.G1).Add(proofBG1, pk.VkBeta1)
-		proofBG1 = new(bn256.G1).Add(proofBG1, new(bn256.G1).ScalarMult(pk.VkDelta1, s))
-		wg2.Done()
-	}()
-	go func() {
-		for i := 0; i < len(h); i++ {
-			proof.C = new(bn256.G1).Add(proof.C, new(bn256.G1).ScalarMult(pk.HExps[i], h[i]))
-		}
-		wg2.Done()
-	}()
+	wg2.Add(numcpu)
+	for _cpu, _ranges := range ranges(len(h), numcpu) {
+		// split 2
+		go func(cpu int, ranges [2]int) {
+			for i := ranges[0]; i < ranges[1]; i++ {
+				proofC[cpu].Add(proofC[cpu], new(bn256.G1).ScalarMult(pk.HExps[i], h[i]))
+			}
+			wg2.Done()
+		}(_cpu, _ranges)
+	}
 	wg2.Wait()
+	// join 2
+	for cpu := 1; cpu < numcpu; cpu++ {
+		proofC[0].Add(proofC[0], proofC[cpu])
+	}
+	proof.C.Add(proof.C, proofC[0])
 
-	proof.C = new(bn256.G1).Add(proof.C, new(bn256.G1).ScalarMult(proof.A, s))
-	proof.C = new(bn256.G1).Add(proof.C, new(bn256.G1).ScalarMult(proofBG1, r))
+	proof.C.Add(proof.C, new(bn256.G1).ScalarMult(proof.A, s))
+	proof.C.Add(proof.C, new(bn256.G1).ScalarMult(proofBG1[0], r))
 	rsneg := new(big.Int).Mod(new(big.Int).Neg(new(big.Int).Mul(r, s)), types.R) // fAdd & fMul
-	proof.C = new(bn256.G1).Add(proof.C, new(bn256.G1).ScalarMult(pk.VkDelta1, rsneg))
+	proof.C.Add(proof.C, new(bn256.G1).ScalarMult(pk.VkDelta1, rsneg))
 
 	pubSignals := w[1 : pk.NPublic+1]
 
@@ -139,14 +152,27 @@ func calculateH(pk *types.Pk, w types.Witness) []*big.Int {
 	polAT := arrayOfZeroes(m)
 	polBT := arrayOfZeroes(m)
 
-	for i := 0; i < pk.NVars; i++ {
-		for j := range pk.PolsA[i] {
-			polAT[j] = fAdd(polAT[j], fMul(w[i], pk.PolsA[i][j]))
+	numcpu := runtime.NumCPU()
+
+	var wg1 sync.WaitGroup
+	wg1.Add(2)
+	go func() {
+		for i := 0; i < pk.NVars; i++ {
+			for j := range pk.PolsA[i] {
+				polAT[j] = fAdd(polAT[j], fMul(w[i], pk.PolsA[i][j]))
+			}
 		}
-		for j := range pk.PolsB[i] {
-			polBT[j] = fAdd(polBT[j], fMul(w[i], pk.PolsB[i][j]))
+		wg1.Done()
+	}()
+	go func() {
+		for i := 0; i < pk.NVars; i++ {
+			for j := range pk.PolsB[i] {
+				polBT[j] = fAdd(polBT[j], fMul(w[i], pk.PolsB[i][j]))
+			}
 		}
-	}
+		wg1.Done()
+	}()
+	wg1.Wait()
 	polATe := utils.BigIntArrayToElementArray(polAT)
 	polBTe := utils.BigIntArrayToElementArray(polBT)
 
@@ -156,22 +182,50 @@ func calculateH(pk *types.Pk, w types.Witness) []*big.Int {
 	r := int(math.Log2(float64(m))) + 1
 	roots := newRootsT()
 	roots.setRoots(r)
-	for i := 0; i < len(polASe); i++ {
-		polASe[i] = ff.NewElement().Mul(polASe[i], roots.roots[r][i])
-		polBSe[i] = ff.NewElement().Mul(polBSe[i], roots.roots[r][i])
+	println("len(polASe)", len(polASe))
+
+	var wg2 sync.WaitGroup
+	wg2.Add(numcpu)
+	for _cpu, _ranges := range ranges(len(polASe), numcpu) {
+		go func(cpu int, ranges [2]int) {
+			for i := ranges[0]; i < ranges[1]; i++ {
+				polASe[i].Mul(polASe[i], roots.roots[r][i])
+				polBSe[i].Mul(polBSe[i], roots.roots[r][i])
+			}
+			wg2.Done()
+		}(_cpu, _ranges)
 	}
+	wg2.Wait()
 
 	polATodd := fft(polASe)
 	polBTodd := fft(polBSe)
 
 	polABT := arrayOfZeroesE(len(polASe) * 2)
-	for i := 0; i < len(polASe); i++ {
-		polABT[2*i] = ff.NewElement().Mul(polATe[i], polBTe[i])
-		polABT[2*i+1] = ff.NewElement().Mul(polATodd[i], polBTodd[i])
+	var wg3 sync.WaitGroup
+	wg3.Add(numcpu)
+	for _cpu, _ranges := range ranges(len(polASe), numcpu) {
+		go func(cpu int, ranges [2]int) {
+			for i := ranges[0]; i < ranges[1]; i++ {
+				polABT[2*i].Mul(polATe[i], polBTe[i])
+				polABT[2*i+1].Mul(polATodd[i], polBTodd[i])
+			}
+			wg3.Done()
+		}(_cpu, _ranges)
 	}
+	wg3.Wait()
 
 	hSeFull := ifft(polABT)
 
 	hSe := hSeFull[m:]
 	return utils.ElementArrayToBigIntArray(hSe)
+}
+
+func ranges(n, parts int) [][2]int {
+	s := make([][2]int, parts)
+	p := float64(n) / float64(parts)
+	for i := 0; i < parts; i++ {
+		a, b := int(float64(i)*p), int(float64(i+1)*p)
+		s[i] = [2]int{a, b}
+	}
+	return s
 }
