@@ -16,8 +16,8 @@ jobs:
         go-version: ${{ matrix.go-version }}
     - name: Install Nodejs
       uses: actions/setup-node@v1
-      with:
-        go-version: 10.x
+      with: 
+        node-version: '10.x'
     - name: Install circom
       run: npm install -g circom
     - name: Install snarkjs
