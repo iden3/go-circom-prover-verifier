@@ -69,7 +69,6 @@ func GenerateProof(pk *types.Pk, w types.Witness) (*types.Proof, []*big.Int, err
 	}
 
 	// BEGIN PAR
-	println("NVars", pk.NVars)
 	numcpu := runtime.NumCPU()
 
 	proofA := arrayOfZeroesG1(numcpu)
@@ -107,8 +106,6 @@ func GenerateProof(pk *types.Pk, w types.Witness) (*types.Proof, []*big.Int, err
 
 	h := calculateH(pk, w)
 
-	println("len(h)", len(h))
-
 	proof.A.Add(proof.A, pk.VkAlpha1)
 	proof.A.Add(proof.A, new(bn256.G1).ScalarMult(pk.VkDelta1, r))
 
@@ -139,7 +136,7 @@ func GenerateProof(pk *types.Pk, w types.Witness) (*types.Proof, []*big.Int, err
 
 	proof.C.Add(proof.C, new(bn256.G1).ScalarMult(proof.A, s))
 	proof.C.Add(proof.C, new(bn256.G1).ScalarMult(proofBG1[0], r))
-	rsneg := new(big.Int).Mod(new(big.Int).Neg(new(big.Int).Mul(r, s)), types.R) // fAdd & fMul
+	rsneg := new(big.Int).Mod(new(big.Int).Neg(new(big.Int).Mul(r, s)), types.R)
 	proof.C.Add(proof.C, new(bn256.G1).ScalarMult(pk.VkDelta1, rsneg))
 
 	pubSignals := w[1 : pk.NPublic+1]
@@ -182,7 +179,6 @@ func calculateH(pk *types.Pk, w types.Witness) []*big.Int {
 	r := int(math.Log2(float64(m))) + 1
 	roots := newRootsT()
 	roots.setRoots(r)
-	println("len(polASe)", len(polASe))
 
 	var wg2 sync.WaitGroup
 	wg2.Add(numcpu)
