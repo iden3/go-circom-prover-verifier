@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/iden3/go-circom-prover-verifier/parsers"
@@ -34,15 +35,15 @@ func main() {
 		if err != nil {
 			fmt.Println("Error:", err)
 		}
-		return
+		os.Exit(0)
 	} else if *verify {
 		err := cmdVerify(*proofPath, *verificationKeyPath, *publicPath)
 		if err != nil {
 			fmt.Println("Error:", err)
 		}
-		return
+		os.Exit(0)
 	}
-	fmt.Println("use -help for the list of commands")
+	flag.PrintDefaults()
 }
 
 func cmdProve(provingKeyPath, witnessPath, proofPath, publicPath string) error {

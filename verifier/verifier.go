@@ -17,6 +17,7 @@ type Vk struct {
 	IC    []*bn256.G1
 }
 
+// Verify verifies the Groth16 zkSNARK proof
 func Verify(vk *types.Vk, proof *types.Proof, inputs []*big.Int) bool {
 	if len(inputs)+1 != len(vk.IC) {
 		fmt.Println("len(inputs)+1 != len(vk.IC)")

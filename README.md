@@ -1,6 +1,6 @@
 # go-circom-prover-verifier [![GoDoc](https://godoc.org/github.com/iden3/go-circom-prover-verifier?status.svg)](https://godoc.org/github.com/iden3/go-circom-prover-verifier) [![Go Report Card](https://goreportcard.com/badge/github.com/iden3/go-circom-prover-verifier)](https://goreportcard.com/report/github.com/iden3/go-circom-prover-verifier) [![Test](https://github.com/iden3/go-circom-prover-verifier/workflows/Test/badge.svg)](https://github.com/iden3/go-circom-prover-verifier/actions?query=workflow%3ATest)
 
-Experimental Go implementation of the [Groth16 protocol](https://eprint.iacr.org/2016/260.pdf) zkSNARK prover & verifier compatible with [circom](https://github.com/iden3/circom).
+Go implementation of the [Groth16 protocol](https://eprint.iacr.org/2016/260.pdf) zkSNARK prover & verifier compatible with [circom](https://github.com/iden3/circom).
 
 
 Using [bn256](https://github.com/ethereum/go-ethereum/tree/master/crypto/bn256/cloudflare) (used by [go-ethereum](https://github.com/ethereum/go-ethereum)) for the Pairing curve operations.
@@ -82,9 +82,9 @@ Usage of /tmp/go-build620318239/b001/exe/cli:
 
 - Prove
 ```
-> go run cli.go -prove -provingkey=../testdata/small/proving_key.json -witness=../testdata/small/witness.json
+> go run cli.go -prove -provingkey=../testdata/circuit5k/proving_key.json -witness=../testdata/circuit5k/witness.json
 ```
 - Verify
 ```
-> go run cli.go -verify -verificationkey=../testdata/small/verification_key.json
+> go run cli.go -verify -verificationkey=../testdata/circuit5k/verification_key.json
 ```

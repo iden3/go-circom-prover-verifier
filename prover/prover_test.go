@@ -61,12 +61,12 @@ func testCircuitGenerateProof(t *testing.T, circuit string) {
 
 func BenchmarkGenerateProof(b *testing.B) {
 	// benchmark with a circuit of 10000 constraints
-	provingKeyJson, err := ioutil.ReadFile("../testdata/circuit1/proving_key.json")
+	provingKeyJson, err := ioutil.ReadFile("../testdata/circuit5k/proving_key.json")
 	require.Nil(b, err)
 	pk, err := parsers.ParsePk(provingKeyJson)
 	require.Nil(b, err)
 
-	witnessJson, err := ioutil.ReadFile("../testdata/circuit1/witness.json")
+	witnessJson, err := ioutil.ReadFile("../testdata/circuit5k/witness.json")
 	require.Nil(b, err)
 	w, err := parsers.ParseWitness(witnessJson)
 	require.Nil(b, err)
