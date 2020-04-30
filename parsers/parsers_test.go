@@ -1,9 +1,12 @@
 package parsers
 
 import (
+	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseArrayG1(t *testing.T) {
@@ -142,4 +145,30 @@ func TestParseArrayG2(t *testing.T) {
 	assert.Equal(t, "bn256.G2((0000000000000000000000000000000000000000000000000000000000000000, 0000000000000000000000000000000000000000000000000000000000000000), (0000000000000000000000000000000000000000000000000000000000000000, 0000000000000000000000000000000000000000000000000000000000000001))", a[0].String())
 	assert.Equal(t, "bn256.G2((1922d70c934543aa655ec3277f7fa10a25ec973a4f001a7c54ce4954b4916f8c, 14865e836947c42cf35b47d30e06535fff9dab319c4296e28afde368960671d5), (2f50fbe77925b0a9d718c9ab38638bafa7c65f43f0d09035e518df97ad294847, 177dfa1a3b8627faf0425d9511bcb4c6ca986ea05e3803b5c643c35b94a7e6fe))", a[3].String())
 
+}
+
+func testCircuitParseWitnessBin(t *testing.T, circuit string) {
+	witnessBinFile, err := os.Open("../testdata/" + circuit + "/witness.bin")
+	require.Nil(t, err)
+	defer witnessBinFile.Close()
+	witness, err := ParseWitnessBin(witnessBinFile)
+	require.Nil(t, err)
+
+	witnessJson, err := ioutil.ReadFile("../testdata/" + circuit + "/witness.json")
+	require.Nil(t, err)
+	w, err := ParseWitness(witnessJson)
+	require.Nil(t, err)
+
+	assert.Equal(t, len(w), len(witness))
+	assert.Equal(t, w[0], witness[0])
+	assert.Equal(t, w[1], witness[1])
+	assert.Equal(t, w[10], witness[10])
+	assert.Equal(t, w[len(w)-3], witness[len(w)-3])
+	assert.Equal(t, w[len(w)-2], witness[len(w)-2])
+	assert.Equal(t, w[len(w)-1], witness[len(w)-1])
+}
+
+func TestParseWitnessBin(t *testing.T) {
+	testCircuitParseWitnessBin(t, "circuit1k")
+	testCircuitParseWitnessBin(t, "circuit5k")
 }

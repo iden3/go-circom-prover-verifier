@@ -18,10 +18,6 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: '10.x'
-    - name: Install circom
-      run: npm install -g circom
-    - name: Install snarkjs
-      run: npm install -g snarkjs
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Compile circuits and execute Go tests

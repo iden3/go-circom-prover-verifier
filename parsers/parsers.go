@@ -1,11 +1,14 @@
 package parsers
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math/big"
+	"os"
 	"strconv"
 	"strings"
 
@@ -495,4 +498,32 @@ func ProofToJson(p *types.Proof) ([]byte, error) {
 	ps.Protocol = "groth"
 
 	return json.Marshal(ps)
+}
+
+// ParseWitness parses binary file representation of the Witness into the Witness struct
+func ParseWitnessBin(f *os.File) (types.Witness, error) {
+	var w types.Witness
+	r := bufio.NewReader(f)
+	for {
+		b := make([]byte, 32)
+		n, err := r.Read(b)
+		if err == io.EOF {
+			return w, nil
+		} else if err != nil {
+			return nil, err
+		}
+		if n != 32 {
+			return nil, fmt.Errorf("error on value format, expected 32 bytes, got %v", n)
+		}
+		w = append(w, new(big.Int).SetBytes(swapEndianness(b[0:32])))
+	}
+}
+
+// swapEndianness swaps the order of the bytes in the slice.
+func swapEndianness(b []byte) []byte {
+	o := make([]byte, len(b))
+	for i := range b {
+		o[len(b)-1-i] = b[i]
+	}
+	return o
 }
