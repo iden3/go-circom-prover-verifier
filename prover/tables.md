@@ -16,7 +16,7 @@ There may be some concern on the additional size of the tables since they need t
 
 
 | Algorithm | GS / Time |
-|---|---|---|
+|---|---|---|--|---|---|---|---|
 | Naive | 6.63s | | | | | | | |
 | Strauss |  13.16s | 9.033s | 6.95s | 5.61s | 4.91s | 4.26s | 3.88s | 3.54 s | 1.44 s |
 | Strauss + Table Computation | 16.13s | 11.32s | 8.47s | 7.10s | 6.2s | 5.94s | 6.01s | 6.69s |
