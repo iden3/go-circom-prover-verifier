@@ -16,8 +16,8 @@ import (
 func TestCircuitsGenerateProof(t *testing.T) {
 	testCircuitGenerateProof(t, "circuit1k") // 1000 constraints
 	testCircuitGenerateProof(t, "circuit5k") // 5000 constraints
-        testCircuitGenerateProof(t, "circuit10k") // 10000 constraints
-        testCircuitGenerateProof(t, "circuit20k") // 20000 constraints
+        //testCircuitGenerateProof(t, "circuit10k") // 10000 constraints
+        //testCircuitGenerateProof(t, "circuit20k") // 20000 constraints
 }
 
 func testCircuitGenerateProof(t *testing.T, circuit string) {
