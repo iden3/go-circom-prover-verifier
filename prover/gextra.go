@@ -4,7 +4,6 @@ import (
         "math/big"
 	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
 	cryptoConstants "github.com/iden3/go-iden3-crypto/constants"
-        //"fmt"
 )
 
 type TableG1 struct{

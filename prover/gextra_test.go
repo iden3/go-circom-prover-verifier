@@ -11,7 +11,7 @@ import (
 )
 
 const (
-       N = 5000
+       N = 50000
 )
 
 func randomBigIntArray(n int) []*big.Int{
