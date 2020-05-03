@@ -15,10 +15,7 @@ There are 50000 G1 Elliptical Curve Points, and the scalars are 254 bits (BN256 
 There may be some concern on the additional size of the tables since they need to be loaded into a smartphone during the proof, and the time required to load these tables may exceed the benefits. If this is a problem, another althernative is to compute the tables during the proof itself. Depending on the Group Size, timing may be better than the naive approach.
 
 
-| Algorithm (G1)| GS / Time |
-|---|---|---|
-| Naive | 6.63s | | | | | | | |
-| Algorithm | GS 2 | GS 3 | GS 4 | GS 5 | GS 6 | GS 7 | GS 8 | GS 9 | 
+| Algorithm (G1) | GS 2 | GS 3 | GS 4 | GS 5 | GS 6 | GS 7 | GS 8 | GS 9 | 
 |---|---|---|---|---|---|---|---|---|
 | Naive | 6.63s | - | - | - | - | - |  - | - |
 | Strauss |  13.16s | 9.03s | 6.95s | 5.61s | 4.91s | 4.26s | 3.88s | 3.54 s |
@@ -28,8 +25,8 @@ There may be some concern on the additional size of the tables since they need t
 
 There are 5000 G2 Elliptical Curve Points, and the scalars are 254 bits (BN256 curve). 
 
-| Algorithm (G2)| GS / Time |
-|---|---|---|
+| Algorithm (G2) | GS 2 | GS 3 | GS 4 | GS 5 | GS 6 | GS 7 | GS 8 | GS 9 | 
+|---|---|---|---|---|---|---|---|---|
 | Naive | 3.55s | | | | | | | |
 | Strauss |  3.55s | 2.54s | 1.96s | 1.58s |  1.38s | 1.20s | 1.03s | 937ms |
 | Strauss + Table Computation | 3.59s | 2.58s | 2.04s | 1.71s | 1.51s | 1.46s | 1.51s | 1.82s |
