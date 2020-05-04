@@ -68,8 +68,6 @@ func GenerateProof(pk *types.Pk, w types.Witness) (*types.Proof, []*big.Int, err
 		return nil, nil, err
 	}
 
-	// BEGIN PAR
-	println("NVars", pk.NVars)
 	numcpu := runtime.NumCPU()
 
 	proofA := arrayOfZeroesG1(numcpu)
@@ -81,12 +79,14 @@ func GenerateProof(pk *types.Pk, w types.Witness) (*types.Proof, []*big.Int, err
 	for _cpu, _ranges := range ranges(pk.NVars, numcpu) {
 		// split 1
 		go func(cpu int, ranges [2]int) {
+			tmpG1 := new(bn256.G1).ScalarBaseMult(big.NewInt(0))
+			tmpG2 := new(bn256.G2).ScalarBaseMult(big.NewInt(0))
 			for i := ranges[0]; i < ranges[1]; i++ {
-				proofA[cpu].Add(proofA[cpu], new(bn256.G1).ScalarMult(pk.A[i], w[i]))
-				proofB[cpu].Add(proofB[cpu], new(bn256.G2).ScalarMult(pk.B2[i], w[i]))
-				proofBG1[cpu].Add(proofBG1[cpu], new(bn256.G1).ScalarMult(pk.B1[i], w[i]))
+				proofA[cpu].Add(proofA[cpu], tmpG1.ScalarMult(pk.A[i], w[i]))
+				proofB[cpu].Add(proofB[cpu], tmpG2.ScalarMult(pk.B2[i], w[i]))
+				proofBG1[cpu].Add(proofBG1[cpu], tmpG1.ScalarMult(pk.B1[i], w[i]))
 				if i >= pk.NPublic+1 {
-					proofC[cpu].Add(proofC[cpu], new(bn256.G1).ScalarMult(pk.C[i], w[i]))
+					proofC[cpu].Add(proofC[cpu], tmpG1.ScalarMult(pk.C[i], w[i]))
 				}
 			}
 			wg1.Done()
@@ -103,7 +103,6 @@ func GenerateProof(pk *types.Pk, w types.Witness) (*types.Proof, []*big.Int, err
 	proof.A = proofA[0]
 	proof.B = proofB[0]
 	proof.C = proofC[0]
-	// END PAR
 
 	h := calculateH(pk, w)
 
@@ -124,8 +123,9 @@ func GenerateProof(pk *types.Pk, w types.Witness) (*types.Proof, []*big.Int, err
 	for _cpu, _ranges := range ranges(len(h), numcpu) {
 		// split 2
 		go func(cpu int, ranges [2]int) {
+			tmpG1 := new(bn256.G1).ScalarBaseMult(big.NewInt(0))
 			for i := ranges[0]; i < ranges[1]; i++ {
-				proofC[cpu].Add(proofC[cpu], new(bn256.G1).ScalarMult(pk.HExps[i], h[i]))
+				proofC[cpu].Add(proofC[cpu], tmpG1.ScalarMult(pk.HExps[i], h[i]))
 			}
 			wg2.Done()
 		}(_cpu, _ranges)
@@ -152,27 +152,14 @@ func calculateH(pk *types.Pk, w types.Witness) []*big.Int {
 	polAT := arrayOfZeroes(m)
 	polBT := arrayOfZeroes(m)
 
-	numcpu := runtime.NumCPU()
-
-	var wg1 sync.WaitGroup
-	wg1.Add(2)
-	go func() {
-		for i := 0; i < pk.NVars; i++ {
-			for j := range pk.PolsA[i] {
-				polAT[j] = fAdd(polAT[j], fMul(w[i], pk.PolsA[i][j]))
-			}
+	for i := 0; i < pk.NVars; i++ {
+		for j := range pk.PolsA[i] {
+			polAT[j] = fAdd(polAT[j], fMul(w[i], pk.PolsA[i][j]))
 		}
-		wg1.Done()
-	}()
-	go func() {
-		for i := 0; i < pk.NVars; i++ {
-			for j := range pk.PolsB[i] {
-				polBT[j] = fAdd(polBT[j], fMul(w[i], pk.PolsB[i][j]))
-			}
+		for j := range pk.PolsB[i] {
+			polBT[j] = fAdd(polBT[j], fMul(w[i], pk.PolsB[i][j]))
 		}
-		wg1.Done()
-	}()
-	wg1.Wait()
+	}
 	polATe := utils.BigIntArrayToElementArray(polAT)
 	polBTe := utils.BigIntArrayToElementArray(polBT)
 
@@ -182,37 +169,20 @@ func calculateH(pk *types.Pk, w types.Witness) []*big.Int {
 	r := int(math.Log2(float64(m))) + 1
 	roots := newRootsT()
 	roots.setRoots(r)
-	println("len(polASe)", len(polASe))
 
-	var wg2 sync.WaitGroup
-	wg2.Add(numcpu)
-	for _cpu, _ranges := range ranges(len(polASe), numcpu) {
-		go func(cpu int, ranges [2]int) {
-			for i := ranges[0]; i < ranges[1]; i++ {
-				polASe[i].Mul(polASe[i], roots.roots[r][i])
-				polBSe[i].Mul(polBSe[i], roots.roots[r][i])
-			}
-			wg2.Done()
-		}(_cpu, _ranges)
+	for i := 0; i < len(polASe); i++ {
+		polASe[i].Mul(polASe[i], roots.roots[r][i])
+		polBSe[i].Mul(polBSe[i], roots.roots[r][i])
 	}
-	wg2.Wait()
 
 	polATodd := fft(polASe)
 	polBTodd := fft(polBSe)
 
 	polABT := arrayOfZeroesE(len(polASe) * 2)
-	var wg3 sync.WaitGroup
-	wg3.Add(numcpu)
-	for _cpu, _ranges := range ranges(len(polASe), numcpu) {
-		go func(cpu int, ranges [2]int) {
-			for i := ranges[0]; i < ranges[1]; i++ {
-				polABT[2*i].Mul(polATe[i], polBTe[i])
-				polABT[2*i+1].Mul(polATodd[i], polBTodd[i])
-			}
-			wg3.Done()
-		}(_cpu, _ranges)
+	for i := 0; i < len(polASe); i++ {
+		polABT[2*i].Mul(polATe[i], polBTe[i])
+		polABT[2*i+1].Mul(polATodd[i], polBTodd[i])
 	}
-	wg3.Wait()
 
 	hSeFull := ifft(polABT)
 
