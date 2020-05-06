@@ -10,6 +10,7 @@ import (
 	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
 	"github.com/iden3/go-circom-prover-verifier/types"
 	"github.com/iden3/go-iden3-crypto/utils"
+        //"fmt"
 )
 
 // Proof is the data structure of the Groth16 zkSNARK proof
@@ -41,6 +42,11 @@ type Pk struct {
 
 // Witness contains the witness
 type Witness []*big.Int
+
+// Group Size
+const (
+    GSIZE = 6
+)
 
 func randBigInt() (*big.Int, error) {
 	maxbits := types.R.BitLen()
@@ -75,19 +81,34 @@ func GenerateProof(pk *types.Pk, w types.Witness) (*types.Proof, []*big.Int, err
 	proofB := arrayOfZeroesG2(numcpu)
 	proofC := arrayOfZeroesG1(numcpu)
 	proofBG1 := arrayOfZeroesG1(numcpu)
+        gsize := GSIZE
 	var wg1 sync.WaitGroup
 	wg1.Add(numcpu)
 	for _cpu, _ranges := range ranges(pk.NVars, numcpu) {
 		// split 1
 		go func(cpu int, ranges [2]int) {
-			for i := ranges[0]; i < ranges[1]; i++ {
-				proofA[cpu].Add(proofA[cpu], new(bn256.G1).ScalarMult(pk.A[i], w[i]))
-				proofB[cpu].Add(proofB[cpu], new(bn256.G2).ScalarMult(pk.B2[i], w[i]))
-				proofBG1[cpu].Add(proofBG1[cpu], new(bn256.G1).ScalarMult(pk.B1[i], w[i]))
-				if i >= pk.NPublic+1 {
-					proofC[cpu].Add(proofC[cpu], new(bn256.G1).ScalarMult(pk.C[i], w[i]))
-				}
-			}
+                        proofA[cpu] = ScalarMultNoDoubleG1(pk.A[ranges[0]:ranges[1]],
+                                                           w[ranges[0]:ranges[1]],
+                                                           proofA[cpu],
+                                                           gsize)
+                        proofB[cpu] = ScalarMultNoDoubleG2(pk.B2[ranges[0]:ranges[1]],
+                                                           w[ranges[0]:ranges[1]],
+                                                           proofB[cpu],
+                                                           gsize)
+                        proofBG1[cpu] = ScalarMultNoDoubleG1(pk.B1[ranges[0]:ranges[1]],
+                                                           w[ranges[0]:ranges[1]],
+                                                           proofBG1[cpu],
+                                                           gsize)
+                        min_lim := pk.NPublic+1
+                        if ranges[0] > pk.NPublic+1 {
+                           min_lim = ranges[0]
+                        }
+                        if ranges[1] > pk.NPublic + 1 {
+                            proofC[cpu] = ScalarMultNoDoubleG1(pk.C[min_lim:ranges[1]],
+                                                           w[min_lim:ranges[1]],
+                                                           proofC[cpu],
+                                                           gsize)
+                        }
 			wg1.Done()
 		}(_cpu, _ranges)
 	}
@@ -121,9 +142,10 @@ func GenerateProof(pk *types.Pk, w types.Witness) (*types.Proof, []*big.Int, err
 	for _cpu, _ranges := range ranges(len(h), numcpu) {
 		// split 2
 		go func(cpu int, ranges [2]int) {
-			for i := ranges[0]; i < ranges[1]; i++ {
-				proofC[cpu].Add(proofC[cpu], new(bn256.G1).ScalarMult(pk.HExps[i], h[i]))
-			}
+                        proofC[cpu] = ScalarMultNoDoubleG1(pk.HExps[ranges[0]:ranges[1]],
+                                                           h[ranges[0]:ranges[1]],
+                                                           proofC[cpu],
+                                                           gsize)
 			wg2.Done()
 		}(_cpu, _ranges)
 	}
