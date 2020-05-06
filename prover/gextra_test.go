@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"crypto/rand"
 	"fmt"
-	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
 	"math/big"
 	"testing"
 	"time"
+
+	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
 )
 
 const (
@@ -60,31 +61,31 @@ func TestTableG1(t *testing.T) {
 
 	for gsize := 2; gsize < 10; gsize++ {
 		ntables := int((n + gsize - 1) / gsize)
-		table := make([]TableG1, ntables)
+		table := make([]tableG1, ntables)
 
 		for i := 0; i < ntables-1; i++ {
-			table[i].NewTableG1(arrayG1[i*gsize:(i+1)*gsize], gsize, true)
+			table[i].newTableG1(arrayG1[i*gsize:(i+1)*gsize], gsize, true)
 		}
-		table[ntables-1].NewTableG1(arrayG1[(ntables-1)*gsize:], gsize, true)
+		table[ntables-1].newTableG1(arrayG1[(ntables-1)*gsize:], gsize, true)
 
 		beforeT = time.Now()
 		Q2 := new(bn256.G1).ScalarBaseMult(new(big.Int))
 		for i := 0; i < ntables-1; i++ {
-			Q2 = table[i].MulTableG1(arrayW[i*gsize:(i+1)*gsize], Q2, gsize)
+			Q2 = table[i].mulTableG1(arrayW[i*gsize:(i+1)*gsize], Q2, gsize)
 		}
-		Q2 = table[ntables-1].MulTableG1(arrayW[(ntables-1)*gsize:], Q2, gsize)
+		Q2 = table[ntables-1].mulTableG1(arrayW[(ntables-1)*gsize:], Q2, gsize)
 		fmt.Printf("Gsize : %d, TMult time elapsed: %s\n", gsize, time.Since(beforeT))
 
 		beforeT = time.Now()
-		Q3 := ScalarMultG1(arrayG1, arrayW, nil, gsize)
+		Q3 := scalarMultG1(arrayG1, arrayW, nil, gsize)
 		fmt.Printf("Gsize : %d, TMult time elapsed (inc table comp): %s\n", gsize, time.Since(beforeT))
 
 		beforeT = time.Now()
-		Q4 := MulTableNoDoubleG1(table, arrayW, nil, gsize)
+		Q4 := mulTableNoDoubleG1(table, arrayW, nil, gsize)
 		fmt.Printf("Gsize : %d, TMultNoDouble time elapsed: %s\n", gsize, time.Since(beforeT))
 
 		beforeT = time.Now()
-		Q5 := ScalarMultNoDoubleG1(arrayG1, arrayW, nil, gsize)
+		Q5 := scalarMultNoDoubleG1(arrayG1, arrayW, nil, gsize)
 		fmt.Printf("Gsize : %d, TMultNoDouble time elapsed (inc table comp): %s\n", gsize, time.Since(beforeT))
 
 		if bytes.Compare(Q1.Marshal(), Q2.Marshal()) != 0 {
@@ -119,31 +120,31 @@ func TestTableG2(t *testing.T) {
 
 	for gsize := 2; gsize < 10; gsize++ {
 		ntables := int((n + gsize - 1) / gsize)
-		table := make([]TableG2, ntables)
+		table := make([]tableG2, ntables)
 
 		for i := 0; i < ntables-1; i++ {
-			table[i].NewTableG2(arrayG2[i*gsize:(i+1)*gsize], gsize, false)
+			table[i].newTableG2(arrayG2[i*gsize:(i+1)*gsize], gsize, false)
 		}
-		table[ntables-1].NewTableG2(arrayG2[(ntables-1)*gsize:], gsize, false)
+		table[ntables-1].newTableG2(arrayG2[(ntables-1)*gsize:], gsize, false)
 
 		beforeT = time.Now()
 		Q2 := new(bn256.G2).ScalarBaseMult(new(big.Int))
 		for i := 0; i < ntables-1; i++ {
-			Q2 = table[i].MulTableG2(arrayW[i*gsize:(i+1)*gsize], Q2, gsize)
+			Q2 = table[i].mulTableG2(arrayW[i*gsize:(i+1)*gsize], Q2, gsize)
 		}
-		Q2 = table[ntables-1].MulTableG2(arrayW[(ntables-1)*gsize:], Q2, gsize)
+		Q2 = table[ntables-1].mulTableG2(arrayW[(ntables-1)*gsize:], Q2, gsize)
 		fmt.Printf("Gsize : %d, TMult time elapsed: %s\n", gsize, time.Since(beforeT))
 
 		beforeT = time.Now()
-		Q3 := ScalarMultG2(arrayG2, arrayW, nil, gsize)
+		Q3 := scalarMultG2(arrayG2, arrayW, nil, gsize)
 		fmt.Printf("Gsize : %d, TMult time elapsed (inc table comp): %s\n", gsize, time.Since(beforeT))
 
 		beforeT = time.Now()
-		Q4 := MulTableNoDoubleG2(table, arrayW, nil, gsize)
+		Q4 := mulTableNoDoubleG2(table, arrayW, nil, gsize)
 		fmt.Printf("Gsize : %d, TMultNoDouble time elapsed: %s\n", gsize, time.Since(beforeT))
 
 		beforeT = time.Now()
-		Q5 := ScalarMultNoDoubleG2(arrayG2, arrayW, nil, gsize)
+		Q5 := scalarMultNoDoubleG2(arrayG2, arrayW, nil, gsize)
 		fmt.Printf("Gsize : %d, TMultNoDouble time elapsed (inc table comp): %s\n", gsize, time.Since(beforeT))
 
 		if bytes.Compare(Q1.Marshal(), Q2.Marshal()) != 0 {
