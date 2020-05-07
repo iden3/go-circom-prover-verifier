@@ -467,8 +467,35 @@ func stringToG2(h [][]string) (*bn256.G2, error) {
 	return p, err
 }
 
-// ProofToJson outputs the Proof i Json format
-func ProofToJson(p *types.Proof) ([]byte, error) {
+// ProofStringToSmartContractFormat converts the ProofString to a ProofString in the SmartContract format in a ProofString structure
+func ProofStringToSmartContractFormat(s ProofString) ProofString {
+	var rs ProofString
+	rs.A = make([]string, 2)
+	rs.B = make([][]string, 2)
+	rs.B[0] = make([]string, 2)
+	rs.B[1] = make([]string, 2)
+	rs.C = make([]string, 2)
+
+	rs.A[0] = s.A[0]
+	rs.A[1] = s.A[1]
+	rs.B[0][0] = s.B[0][1]
+	rs.B[0][1] = s.B[0][0]
+	rs.B[1][0] = s.B[1][1]
+	rs.B[1][1] = s.B[1][0]
+	rs.C[0] = s.C[0]
+	rs.C[1] = s.C[1]
+	rs.Protocol = s.Protocol
+	return rs
+}
+
+// ProofToSmartContractFormat converts the *types.Proof to a ProofString in the SmartContract format in a ProofString structure
+func ProofToSmartContractFormat(p *types.Proof) ProofString {
+	s := ProofToString(p)
+	return ProofStringToSmartContractFormat(s)
+}
+
+// ProofToString converts the Proof to ProofString
+func ProofToString(p *types.Proof) ProofString {
 	var ps ProofString
 	ps.A = make([]string, 3)
 	ps.B = make([][]string, 3)
@@ -497,10 +524,55 @@ func ProofToJson(p *types.Proof) ([]byte, error) {
 
 	ps.Protocol = "groth"
 
+	return ps
+}
+
+// ProofToJson outputs the Proof i Json format
+func ProofToJson(p *types.Proof) ([]byte, error) {
+	ps := ProofToString(p)
 	return json.Marshal(ps)
 }
 
-// ParseWitness parses binary file representation of the Witness into the Witness struct
+// ProofToHex converts the Proof to ProofString with hexadecimal strings
+func ProofToHex(p *types.Proof) ProofString {
+	var ps ProofString
+	ps.A = make([]string, 3)
+	ps.B = make([][]string, 3)
+	ps.B[0] = make([]string, 2)
+	ps.B[1] = make([]string, 2)
+	ps.B[2] = make([]string, 2)
+	ps.C = make([]string, 3)
+
+	a := p.A.Marshal()
+	ps.A[0] = "0x" + hex.EncodeToString(new(big.Int).SetBytes(a[:32]).Bytes())
+	ps.A[1] = "0x" + hex.EncodeToString(new(big.Int).SetBytes(a[32:64]).Bytes())
+	ps.A[2] = "1"
+
+	b := p.B.Marshal()
+	ps.B[0][1] = "0x" + hex.EncodeToString(new(big.Int).SetBytes(b[:32]).Bytes())
+	ps.B[0][0] = "0x" + hex.EncodeToString(new(big.Int).SetBytes(b[32:64]).Bytes())
+	ps.B[1][1] = "0x" + hex.EncodeToString(new(big.Int).SetBytes(b[64:96]).Bytes())
+	ps.B[1][0] = "0x" + hex.EncodeToString(new(big.Int).SetBytes(b[96:128]).Bytes())
+	ps.B[2][0] = "1"
+	ps.B[2][1] = "0"
+
+	c := p.C.Marshal()
+	ps.C[0] = "0x" + hex.EncodeToString(new(big.Int).SetBytes(c[:32]).Bytes())
+	ps.C[1] = "0x" + hex.EncodeToString(new(big.Int).SetBytes(c[32:64]).Bytes())
+	ps.C[2] = "1"
+
+	ps.Protocol = "groth"
+
+	return ps
+}
+
+// ProofToJsonHex outputs the Proof i Json format with hexadecimal strings
+func ProofToJsonHex(p *types.Proof) ([]byte, error) {
+	ps := ProofToHex(p)
+	return json.Marshal(ps)
+}
+
+// ParseWitnessBin parses binary file representation of the Witness into the Witness struct
 func ParseWitnessBin(f *os.File) (types.Witness, error) {
 	var w types.Witness
 	r := bufio.NewReader(f)

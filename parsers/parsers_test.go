@@ -172,3 +172,27 @@ func TestParseWitnessBin(t *testing.T) {
 	testCircuitParseWitnessBin(t, "circuit1k")
 	testCircuitParseWitnessBin(t, "circuit5k")
 }
+
+func TestProofSmartContractFormat(t *testing.T) {
+	proofJson, err := ioutil.ReadFile("../testdata/circuit1k/proof.json")
+	require.Nil(t, err)
+	proof, err := ParseProof(proofJson)
+	require.Nil(t, err)
+	pS := ProofToString(proof)
+
+	pSC := ProofToSmartContractFormat(proof)
+	assert.Nil(t, err)
+	assert.Equal(t, pS.A[0], pSC.A[0])
+	assert.Equal(t, pS.A[1], pSC.A[1])
+	assert.Equal(t, pS.B[0][0], pSC.B[0][1])
+	assert.Equal(t, pS.B[0][1], pSC.B[0][0])
+	assert.Equal(t, pS.B[1][0], pSC.B[1][1])
+	assert.Equal(t, pS.B[1][1], pSC.B[1][0])
+	assert.Equal(t, pS.C[0], pSC.C[0])
+	assert.Equal(t, pS.C[1], pSC.C[1])
+	assert.Equal(t, pS.Protocol, pSC.Protocol)
+
+	pSC2 := ProofStringToSmartContractFormat(pS)
+	assert.Equal(t, pSC, pSC2)
+
+}

@@ -10,7 +10,7 @@ import (
 	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
 	"github.com/iden3/go-circom-prover-verifier/types"
 	"github.com/iden3/go-iden3-crypto/utils"
-        //"fmt"
+	//"fmt"
 )
 
 // Proof is the data structure of the Groth16 zkSNARK proof
@@ -45,7 +45,7 @@ type Witness []*big.Int
 
 // Group Size
 const (
-    GSIZE = 6
+	GSIZE = 6
 )
 
 func randBigInt() (*big.Int, error) {
@@ -81,34 +81,34 @@ func GenerateProof(pk *types.Pk, w types.Witness) (*types.Proof, []*big.Int, err
 	proofB := arrayOfZeroesG2(numcpu)
 	proofC := arrayOfZeroesG1(numcpu)
 	proofBG1 := arrayOfZeroesG1(numcpu)
-        gsize := GSIZE
+	gsize := GSIZE
 	var wg1 sync.WaitGroup
 	wg1.Add(numcpu)
 	for _cpu, _ranges := range ranges(pk.NVars, numcpu) {
 		// split 1
 		go func(cpu int, ranges [2]int) {
-                        proofA[cpu] = ScalarMultNoDoubleG1(pk.A[ranges[0]:ranges[1]],
-                                                           w[ranges[0]:ranges[1]],
-                                                           proofA[cpu],
-                                                           gsize)
-                        proofB[cpu] = ScalarMultNoDoubleG2(pk.B2[ranges[0]:ranges[1]],
-                                                           w[ranges[0]:ranges[1]],
-                                                           proofB[cpu],
-                                                           gsize)
-                        proofBG1[cpu] = ScalarMultNoDoubleG1(pk.B1[ranges[0]:ranges[1]],
-                                                           w[ranges[0]:ranges[1]],
-                                                           proofBG1[cpu],
-                                                           gsize)
-                        min_lim := pk.NPublic+1
-                        if ranges[0] > pk.NPublic+1 {
-                           min_lim = ranges[0]
-                        }
-                        if ranges[1] > pk.NPublic + 1 {
-                            proofC[cpu] = ScalarMultNoDoubleG1(pk.C[min_lim:ranges[1]],
-                                                           w[min_lim:ranges[1]],
-                                                           proofC[cpu],
-                                                           gsize)
-                        }
+			proofA[cpu] = scalarMultNoDoubleG1(pk.A[ranges[0]:ranges[1]],
+				w[ranges[0]:ranges[1]],
+				proofA[cpu],
+				gsize)
+			proofB[cpu] = scalarMultNoDoubleG2(pk.B2[ranges[0]:ranges[1]],
+				w[ranges[0]:ranges[1]],
+				proofB[cpu],
+				gsize)
+			proofBG1[cpu] = scalarMultNoDoubleG1(pk.B1[ranges[0]:ranges[1]],
+				w[ranges[0]:ranges[1]],
+				proofBG1[cpu],
+				gsize)
+			minLim := pk.NPublic + 1
+			if ranges[0] > pk.NPublic+1 {
+				minLim = ranges[0]
+			}
+			if ranges[1] > pk.NPublic+1 {
+				proofC[cpu] = scalarMultNoDoubleG1(pk.C[minLim:ranges[1]],
+					w[minLim:ranges[1]],
+					proofC[cpu],
+					gsize)
+			}
 			wg1.Done()
 		}(_cpu, _ranges)
 	}
@@ -142,10 +142,10 @@ func GenerateProof(pk *types.Pk, w types.Witness) (*types.Proof, []*big.Int, err
 	for _cpu, _ranges := range ranges(len(h), numcpu) {
 		// split 2
 		go func(cpu int, ranges [2]int) {
-                        proofC[cpu] = ScalarMultNoDoubleG1(pk.HExps[ranges[0]:ranges[1]],
-                                                           h[ranges[0]:ranges[1]],
-                                                           proofC[cpu],
-                                                           gsize)
+			proofC[cpu] = scalarMultNoDoubleG1(pk.HExps[ranges[0]:ranges[1]],
+				h[ranges[0]:ranges[1]],
+				proofC[cpu],
+				gsize)
 			wg2.Done()
 		}(_cpu, _ranges)
 	}
