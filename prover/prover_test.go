@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
@@ -16,25 +17,38 @@ import (
 func TestCircuitsGenerateProof(t *testing.T) {
 	testCircuitGenerateProof(t, "circuit1k") // 1000 constraints
 	testCircuitGenerateProof(t, "circuit5k") // 5000 constraints
-	//testCircuitGenerateProof(t, "circuit10k") // 10000 constraints
-	//testCircuitGenerateProof(t, "circuit20k") // 20000 constraints
+	// testCircuitGenerateProof(t, "circuit10k") // 10000 constraints
+	// testCircuitGenerateProof(t, "circuit20k") // 20000 constraints
 }
 
 func testCircuitGenerateProof(t *testing.T, circuit string) {
-	provingKeyJson, err := ioutil.ReadFile("../testdata/" + circuit + "/proving_key.json")
+	// using json provingKey file
+	// provingKeyJson, err := ioutil.ReadFile("../testdata/" + circuit + "/proving_key.json")
+	// require.Nil(t, err)
+	// pk, err := parsers.ParsePk(provingKeyJson)
+	// require.Nil(t, err)
+	// witnessJson, err := ioutil.ReadFile("../testdata/" + circuit + "/witness.json")
+	// require.Nil(t, err)
+	// w, err := parsers.ParseWitness(witnessJson)
+	// require.Nil(t, err)
+
+	// using bin provingKey file
+	pkBinFile, err := os.Open("../testdata/" + circuit + "/proving_key.bin")
 	require.Nil(t, err)
-	pk, err := parsers.ParsePk(provingKeyJson)
+	defer pkBinFile.Close()
+	pk, err := parsers.ParsePkBin(pkBinFile)
 	require.Nil(t, err)
 
-	witnessJson, err := ioutil.ReadFile("../testdata/" + circuit + "/witness.json")
+	witnessBinFile, err := os.Open("../testdata/" + circuit + "/witness.bin")
 	require.Nil(t, err)
-	w, err := parsers.ParseWitness(witnessJson)
+	defer witnessBinFile.Close()
+	w, err := parsers.ParseWitnessBin(witnessBinFile)
 	require.Nil(t, err)
 
 	beforeT := time.Now()
 	proof, pubSignals, err := GenerateProof(pk, w)
 	assert.Nil(t, err)
-	fmt.Println("proof generation time elapsed:", time.Since(beforeT))
+	fmt.Println("proof generation time for "+circuit+" elapsed:", time.Since(beforeT))
 
 	proofStr, err := parsers.ProofToJson(proof)
 	assert.Nil(t, err)
