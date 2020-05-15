@@ -1,10 +1,12 @@
 package parsers
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"testing"
 
+	"github.com/iden3/go-circom-prover-verifier/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -194,5 +196,18 @@ func TestProofSmartContractFormat(t *testing.T) {
 
 	pSC2 := ProofStringToSmartContractFormat(pS)
 	assert.Equal(t, pSC, pSC2)
+}
 
+func TestProofJSON(t *testing.T) {
+	proofJson, err := ioutil.ReadFile("../testdata/circuit1k/proof.json")
+	require.Nil(t, err)
+	proof, err := ParseProof(proofJson)
+	require.Nil(t, err)
+
+	proof1JSON, err := json.Marshal(proof)
+	require.Nil(t, err)
+	var proof1 types.Proof
+	err = json.Unmarshal(proof1JSON, &proof1)
+	require.Nil(t, err)
+	require.Equal(t, *proof, proof1)
 }
