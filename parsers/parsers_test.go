@@ -211,3 +211,63 @@ func TestProofJSON(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, *proof, proof1)
 }
+
+func testCircuitParsePkBin(t *testing.T, circuit string) {
+	pkBinFile, err := os.Open("../testdata/" + circuit + "/proving_key.bin")
+	require.Nil(t, err)
+	defer pkBinFile.Close()
+	pk, err := ParsePkBin(pkBinFile)
+	require.Nil(t, err)
+
+	pkJson, err := ioutil.ReadFile("../testdata/" + circuit + "/proving_key.json")
+	require.Nil(t, err)
+	pkJ, err := ParsePk(pkJson)
+	require.Nil(t, err)
+
+	assert.Equal(t, pkJ.NVars, pk.NVars)
+	assert.Equal(t, pkJ.NPublic, pk.NPublic)
+	assert.Equal(t, pkJ.DomainSize, pk.DomainSize)
+	assert.Equal(t, pkJ.VkAlpha1, pk.VkAlpha1)
+	assert.Equal(t, pkJ.VkBeta1, pk.VkBeta1)
+	assert.Equal(t, pkJ.VkDelta1, pk.VkDelta1)
+	assert.Equal(t, pkJ.VkDelta2, pk.VkDelta2)
+	assert.Equal(t, pkJ.PolsA, pk.PolsA)
+	assert.Equal(t, pkJ.PolsB, pk.PolsB)
+	assert.Equal(t, pkJ.A, pk.A)
+	assert.Equal(t, pkJ.B1, pk.B1)
+	assert.Equal(t, pkJ.B2, pk.B2)
+	assert.Equal(t, pkJ.C, pk.C)
+	assert.Equal(t, pkJ.HExps[:pkJ.DomainSize], pk.HExps[:pk.DomainSize]) // circom behaviour
+}
+
+func TestParsePkBin(t *testing.T) {
+	testCircuitParsePkBin(t, "circuit1k")
+	testCircuitParsePkBin(t, "circuit5k")
+}
+
+func benchmarkParsePk(b *testing.B, circuit string) {
+	pkJson, err := ioutil.ReadFile("../testdata/" + circuit + "/proving_key.json")
+	require.Nil(b, err)
+
+	pkBinFile, err := os.Open("../testdata/" + circuit + "/proving_key.bin")
+	require.Nil(b, err)
+	defer pkBinFile.Close()
+
+	b.Run("Parse Pk bin "+circuit, func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			ParsePk(pkJson)
+		}
+	})
+	b.Run("Parse Pk json "+circuit, func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			ParsePkBin(pkBinFile)
+		}
+	})
+}
+
+func BenchmarkParsePk(b *testing.B) {
+	benchmarkParsePk(b, "circuit1k")
+	benchmarkParsePk(b, "circuit5k")
+	// benchmarkParsePk(b, "circuit10k")
+	// benchmarkParsePk(b, "circuit20k")
+}
