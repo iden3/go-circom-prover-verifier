@@ -253,11 +253,11 @@ func testGoCircomPkFormat(t *testing.T, circuit string) {
 
 	pkGBin, err := PkToGoBin(pk)
 	require.Nil(t, err)
-	err = ioutil.WriteFile("../testdata/"+circuit+"/proving_key_go.bin", pkGBin, 0644)
+	err = ioutil.WriteFile("../testdata/"+circuit+"/proving_key.go.bin", pkGBin, 0644)
 	assert.Nil(t, err)
 
 	// parse ProvingKeyGo
-	pkGoBinFile, err := os.Open("../testdata/" + circuit + "/proving_key_go.bin")
+	pkGoBinFile, err := os.Open("../testdata/" + circuit + "/proving_key.go.bin")
 	require.Nil(t, err)
 	defer pkGoBinFile.Close()
 	pkG, err := ParsePkGoBin(pkGoBinFile)
@@ -291,7 +291,7 @@ func benchmarkParsePk(b *testing.B, circuit string) {
 	require.Nil(b, err)
 	defer pkBinFile.Close()
 
-	pkGoBinFile, err := os.Open("../testdata/" + circuit + "/proving_key_go.bin")
+	pkGoBinFile, err := os.Open("../testdata/" + circuit + "/proving_key.go.bin")
 	require.Nil(b, err)
 	defer pkGoBinFile.Close()
 

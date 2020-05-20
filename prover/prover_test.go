@@ -22,7 +22,7 @@ func TestCircuitsGenerateProof(t *testing.T) {
 }
 
 func testCircuitGenerateProof(t *testing.T, circuit string) {
-	// using json provingKey file
+	// Using json provingKey file:
 	// provingKeyJson, err := ioutil.ReadFile("../testdata/" + circuit + "/proving_key.json")
 	// require.Nil(t, err)
 	// pk, err := parsers.ParsePk(provingKeyJson)
@@ -32,11 +32,18 @@ func testCircuitGenerateProof(t *testing.T, circuit string) {
 	// w, err := parsers.ParseWitness(witnessJson)
 	// require.Nil(t, err)
 
-	// using bin provingKey file
-	pkBinFile, err := os.Open("../testdata/" + circuit + "/proving_key.bin")
+	// Using bin provingKey file:
+	// pkBinFile, err := os.Open("../testdata/" + circuit + "/proving_key.bin")
+	// require.Nil(t, err)
+	// defer pkBinFile.Close()
+	// pk, err := parsers.ParsePkBin(pkBinFile)
+	// require.Nil(t, err)
+
+	// Using go bin provingKey file:
+	pkGoBinFile, err := os.Open("../testdata/" + circuit + "/proving_key.go.bin")
 	require.Nil(t, err)
-	defer pkBinFile.Close()
-	pk, err := parsers.ParsePkBin(pkBinFile)
+	defer pkGoBinFile.Close()
+	pk, err := parsers.ParsePkGoBin(pkGoBinFile)
 	require.Nil(t, err)
 
 	witnessBinFile, err := os.Open("../testdata/" + circuit + "/witness.bin")

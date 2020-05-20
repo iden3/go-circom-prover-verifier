@@ -21,12 +21,14 @@ func main() {
 
 	prove := flag.Bool("prove", false, "prover mode")
 	verify := flag.Bool("verify", false, "verifier mode")
+	convert := flag.Bool("convert", false, "convert mode, to convert between proving_key.json to proving_key.go.bin")
 
-	provingKeyPath := flag.String("provingkey", "proving_key.json", "provingKey path")
+	provingKeyPath := flag.String("pk", "proving_key.json", "provingKey path")
 	witnessPath := flag.String("witness", "witness.json", "witness path")
 	proofPath := flag.String("proof", "proof.json", "proof path")
-	verificationKeyPath := flag.String("verificationkey", "verification_key.json", "verificationKey path")
+	verificationKeyPath := flag.String("vk", "verification_key.json", "verificationKey path")
 	publicPath := flag.String("public", "public.json", "public signals path")
+	provingKeyBinPath := flag.String("pkbin", "proving_key.go.bin", "provingKey Bin path")
 
 	flag.Parse()
 
@@ -38,6 +40,12 @@ func main() {
 		os.Exit(0)
 	} else if *verify {
 		err := cmdVerify(*proofPath, *verificationKeyPath, *publicPath)
+		if err != nil {
+			fmt.Println("Error:", err)
+		}
+		os.Exit(0)
+	} else if *convert {
+		err := cmdConvert(*provingKeyPath, *provingKeyBinPath)
 		if err != nil {
 			fmt.Println("Error:", err)
 		}
@@ -131,5 +139,27 @@ func cmdVerify(proofPath, verificationKeyPath, publicPath string) error {
 
 	v := verifier.Verify(vk, proof, public)
 	fmt.Println("verification:", v)
+	return nil
+}
+
+func cmdConvert(provingKeyPath, provingKeyBinPath string) error {
+	fmt.Println("Convertion tool")
+
+	provingKeyJson, err := ioutil.ReadFile(provingKeyPath)
+	if err != nil {
+		return err
+	}
+	pk, err := parsers.ParsePk(provingKeyJson)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Converting proving key json (%s)\nto go proving key binary (%s)\n", provingKeyPath, provingKeyBinPath)
+	pkGBin, err := parsers.PkToGoBin(pk)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(provingKeyBinPath, pkGBin, 0644)
+
 	return nil
 }
