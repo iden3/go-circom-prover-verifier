@@ -245,6 +245,44 @@ func TestParsePkBin(t *testing.T) {
 	testCircuitParsePkBin(t, "circuit5k")
 }
 
+func testGoCircomPkFormat(t *testing.T, circuit string) {
+	pkJson, err := ioutil.ReadFile("../testdata/" + circuit + "/proving_key.json")
+	require.Nil(t, err)
+	pk, err := ParsePk(pkJson)
+	require.Nil(t, err)
+
+	pkGBin, err := PkToGoBin(pk)
+	require.Nil(t, err)
+	err = ioutil.WriteFile("../testdata/"+circuit+"/proving_key_go.bin", pkGBin, 0644)
+	assert.Nil(t, err)
+
+	// parse ProvingKeyGo
+	pkGoBinFile, err := os.Open("../testdata/" + circuit + "/proving_key_go.bin")
+	require.Nil(t, err)
+	defer pkGoBinFile.Close()
+	pkG, err := ParsePkGoBin(pkGoBinFile)
+	require.Nil(t, err)
+	assert.Equal(t, pk.VkAlpha1, pkG.VkAlpha1)
+	assert.Equal(t, pk.VkBeta1, pkG.VkBeta1)
+	assert.Equal(t, pk.VkDelta1, pkG.VkDelta1)
+	assert.Equal(t, pk.VkBeta2, pkG.VkBeta2)
+	assert.Equal(t, pk.VkDelta2, pkG.VkDelta2)
+	assert.Equal(t, pk.A, pkG.A)
+	assert.Equal(t, pk.B1, pkG.B1)
+	assert.Equal(t, pk.B2, pkG.B2)
+	assert.Equal(t, pk.C, pkG.C)
+	assert.Equal(t, pk.HExps, pkG.HExps)
+	assert.Equal(t, pk.PolsA, pkG.PolsA)
+	assert.Equal(t, pk.PolsB, pkG.PolsB)
+}
+
+func TestGoCircomPkFormat(t *testing.T) {
+	testGoCircomPkFormat(t, "circuit1k")
+	testGoCircomPkFormat(t, "circuit5k")
+	// testGoCircomPkFormat(t, "circuit10k")
+	// testGoCircomPkFormat(t, "circuit20k")
+}
+
 func benchmarkParsePk(b *testing.B, circuit string) {
 	pkJson, err := ioutil.ReadFile("../testdata/" + circuit + "/proving_key.json")
 	require.Nil(b, err)
@@ -253,14 +291,23 @@ func benchmarkParsePk(b *testing.B, circuit string) {
 	require.Nil(b, err)
 	defer pkBinFile.Close()
 
-	b.Run("Parse Pk bin "+circuit, func(b *testing.B) {
+	pkGoBinFile, err := os.Open("../testdata/" + circuit + "/proving_key_go.bin")
+	require.Nil(b, err)
+	defer pkGoBinFile.Close()
+
+	b.Run("ParsePkJson "+circuit, func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			ParsePkBin(pkBinFile)
+		}
+	})
+	b.Run("ParsePkBin "+circuit, func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			ParsePk(pkJson)
 		}
 	})
-	b.Run("Parse Pk json "+circuit, func(b *testing.B) {
+	b.Run("ParsePkGoBin "+circuit, func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			ParsePkBin(pkBinFile)
+			ParsePkGoBin(pkBinFile)
 		}
 	})
 }
