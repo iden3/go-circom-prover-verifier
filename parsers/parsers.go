@@ -309,6 +309,13 @@ func stringToBigInt(s string) (*big.Int, error) {
 	return n, nil
 }
 
+func addPadding32(b []byte) []byte {
+	if len(b) != 32 {
+		b = addZPadding(b)
+	}
+	return b
+}
+
 func addZPadding(b []byte) []byte {
 	var z [32]byte
 	var r []byte
@@ -831,6 +838,7 @@ func ParsePkBin(f *os.File) (*types.Pk, error) {
 	if o != pPointsHExps {
 		return nil, fmt.Errorf("Unexpected offset, expected: %v, actual: %v", pPointsHExps, o)
 	}
+	// HExps
 	for i := 0; i < pk.DomainSize; i++ {
 		b, err = readNBytes(r, 64)
 		if err != nil {
@@ -964,4 +972,350 @@ func coordFromMont(u, q *big.Int) *big.Int {
 		),
 		q,
 	)
+}
+
+// PkToGoBin converts the ProvingKey (*types.Pk) into binary format defined by
+// go-circom-prover-verifier.  PkGoBin is a own go-circom-prover-verifier
+// binary format that allows to go faster when parsing.
+func PkToGoBin(pk *types.Pk) ([]byte, error) {
+	var r []byte
+	o := 0
+	var b [4]byte
+	binary.LittleEndian.PutUint32(b[:], uint32(pk.NVars))
+	r = append(r, b[:]...)
+
+	binary.LittleEndian.PutUint32(b[:], uint32(pk.NPublic))
+	r = append(r, b[:]...)
+
+	binary.LittleEndian.PutUint32(b[:], uint32(pk.DomainSize))
+	r = append(r, b[:]...)
+	o += 12
+
+	// reserve space for pols (A, B) pos
+	b = [4]byte{}
+	r = append(r, b[:]...) // 12:16
+	r = append(r, b[:]...) // 16:20
+	o += 8
+	// reserve space for points (A, B1, B2, C, HExps) pos
+	r = append(r, b[:]...) // 20:24
+	r = append(r, b[:]...) // 24
+	r = append(r, b[:]...) // 28
+	r = append(r, b[:]...) // 32
+	r = append(r, b[:]...) // 36:40
+	o += 20
+
+	pb1 := pk.VkAlpha1.Marshal()
+	r = append(r, pb1[:]...)
+	pb1 = pk.VkBeta1.Marshal()
+	r = append(r, pb1[:]...)
+	pb1 = pk.VkDelta1.Marshal()
+	r = append(r, pb1[:]...)
+	pb2 := pk.VkBeta2.Marshal()
+	r = append(r, pb2[:]...)
+	pb2 = pk.VkDelta2.Marshal()
+	r = append(r, pb2[:]...)
+	o += 448
+
+	// polsA
+	binary.LittleEndian.PutUint32(r[12:16], uint32(o))
+	for i := 0; i < pk.NVars; i++ {
+		binary.LittleEndian.PutUint32(b[:], uint32(len(pk.PolsA[i])))
+		r = append(r, b[:]...)
+		o += 4
+		for j, v := range pk.PolsA[i] {
+			binary.LittleEndian.PutUint32(b[:], uint32(j))
+			r = append(r, b[:]...)
+			r = append(r, addPadding32(v.Bytes())...)
+			o += 32 + 4
+		}
+	}
+	// polsB
+	binary.LittleEndian.PutUint32(r[16:20], uint32(o))
+	for i := 0; i < pk.NVars; i++ {
+		binary.LittleEndian.PutUint32(b[:], uint32(len(pk.PolsB[i])))
+		r = append(r, b[:]...)
+		o += 4
+		for j, v := range pk.PolsB[i] {
+			binary.LittleEndian.PutUint32(b[:], uint32(j))
+			r = append(r, b[:]...)
+			r = append(r, addPadding32(v.Bytes())...)
+			o += 32 + 4
+		}
+	}
+	// A
+	binary.LittleEndian.PutUint32(r[20:24], uint32(o))
+	for i := 0; i < pk.NVars; i++ {
+		pb1 = pk.A[i].Marshal()
+		r = append(r, pb1[:]...)
+		o += 64
+	}
+	// B1
+	binary.LittleEndian.PutUint32(r[24:28], uint32(o))
+	for i := 0; i < pk.NVars; i++ {
+		pb1 = pk.B1[i].Marshal()
+		r = append(r, pb1[:]...)
+		o += 64
+	}
+	// B2
+	binary.LittleEndian.PutUint32(r[28:32], uint32(o))
+	for i := 0; i < pk.NVars; i++ {
+		pb2 = pk.B2[i].Marshal()
+		r = append(r, pb2[:]...)
+		o += 128
+	}
+	// C
+	binary.LittleEndian.PutUint32(r[32:36], uint32(o))
+	for i := pk.NPublic + 1; i < pk.NVars; i++ {
+		pb1 = pk.C[i].Marshal()
+		r = append(r, pb1[:]...)
+		o += 64
+	}
+	// HExps
+	binary.LittleEndian.PutUint32(r[36:40], uint32(o))
+	for i := 0; i < pk.DomainSize+1; i++ {
+		pb1 = pk.HExps[i].Marshal()
+		r = append(r, pb1[:]...)
+		o += 64
+	}
+
+	return r[:], nil
+}
+
+// ParsePkGoBin parses go-circom-prover-verifier binary file representation of
+// the ProvingKey into ProvingKey struct (*types.Pk).  PkGoBin is a own
+// go-circom-prover-verifier binary format that allows to go faster when
+// parsing.
+func ParsePkGoBin(f *os.File) (*types.Pk, error) {
+	o := 0
+	var pk types.Pk
+	r := bufio.NewReader(f)
+
+	b, err := readNBytes(r, 12)
+	if err != nil {
+		return nil, err
+	}
+	pk.NVars = int(binary.LittleEndian.Uint32(b[:4]))
+	pk.NPublic = int(binary.LittleEndian.Uint32(b[4:8]))
+	pk.DomainSize = int(binary.LittleEndian.Uint32(b[8:12]))
+	o += 12
+
+	b, err = readNBytes(r, 8)
+	if err != nil {
+		return nil, err
+	}
+	pPolsA := int(binary.LittleEndian.Uint32(b[:4]))
+	pPolsB := int(binary.LittleEndian.Uint32(b[4:8]))
+	o += 8
+
+	b, err = readNBytes(r, 20)
+	if err != nil {
+		return nil, err
+	}
+	pPointsA := int(binary.LittleEndian.Uint32(b[:4]))
+	pPointsB1 := int(binary.LittleEndian.Uint32(b[4:8]))
+	pPointsB2 := int(binary.LittleEndian.Uint32(b[8:12]))
+	pPointsC := int(binary.LittleEndian.Uint32(b[12:16]))
+	pPointsHExps := int(binary.LittleEndian.Uint32(b[16:20]))
+	o += 20
+
+	b, err = readNBytes(r, 64)
+	if err != nil {
+		return nil, err
+	}
+	pk.VkAlpha1 = new(bn256.G1)
+	_, err = pk.VkAlpha1.Unmarshal(b)
+	if err != nil {
+		return &pk, err
+	}
+	b, err = readNBytes(r, 64)
+	if err != nil {
+		return nil, err
+	}
+	pk.VkBeta1 = new(bn256.G1)
+	_, err = pk.VkBeta1.Unmarshal(b)
+	if err != nil {
+		return &pk, err
+	}
+	b, err = readNBytes(r, 64)
+	if err != nil {
+		return nil, err
+	}
+	pk.VkDelta1 = new(bn256.G1)
+	_, err = pk.VkDelta1.Unmarshal(b)
+	if err != nil {
+		return &pk, err
+	}
+	b, err = readNBytes(r, 128)
+	if err != nil {
+		return nil, err
+	}
+	pk.VkBeta2 = new(bn256.G2)
+	_, err = pk.VkBeta2.Unmarshal(b)
+	if err != nil {
+		return &pk, err
+	}
+	b, err = readNBytes(r, 128)
+	if err != nil {
+		return nil, err
+	}
+	pk.VkDelta2 = new(bn256.G2)
+	_, err = pk.VkDelta2.Unmarshal(b)
+	if err != nil {
+		return &pk, err
+	}
+	o += 448
+	if o != pPolsA {
+		return nil, fmt.Errorf("Unexpected offset, expected: %v, actual: %v", pPolsA, o)
+	}
+
+	// PolsA
+	for i := 0; i < pk.NVars; i++ {
+		b, err = readNBytes(r, 4)
+		if err != nil {
+			return nil, err
+		}
+		keysLength := int(binary.LittleEndian.Uint32(b[:4]))
+		o += 4
+		polsMap := make(map[int]*big.Int)
+		for j := 0; j < keysLength; j++ {
+			bK, err := readNBytes(r, 4)
+			if err != nil {
+				return nil, err
+			}
+			key := int(binary.LittleEndian.Uint32(bK[:4]))
+			o += 4
+
+			b, err := readNBytes(r, 32)
+			if err != nil {
+				return nil, err
+			}
+			polsMap[key] = new(big.Int).SetBytes(b[:32])
+			o += 32
+		}
+		pk.PolsA = append(pk.PolsA, polsMap)
+	}
+	if o != pPolsB {
+		return nil, fmt.Errorf("Unexpected offset, expected: %v, actual: %v", pPolsB, o)
+	}
+	// PolsB
+	for i := 0; i < pk.NVars; i++ {
+		b, err = readNBytes(r, 4)
+		if err != nil {
+			return nil, err
+		}
+		keysLength := int(binary.LittleEndian.Uint32(b[:4]))
+		o += 4
+		polsMap := make(map[int]*big.Int)
+		for j := 0; j < keysLength; j++ {
+			bK, err := readNBytes(r, 4)
+			if err != nil {
+				return nil, err
+			}
+			key := int(binary.LittleEndian.Uint32(bK[:4]))
+			o += 4
+
+			b, err := readNBytes(r, 32)
+			if err != nil {
+				return nil, err
+			}
+			polsMap[key] = new(big.Int).SetBytes(b[:32])
+			o += 32
+		}
+		pk.PolsB = append(pk.PolsB, polsMap)
+	}
+	if o != pPointsA {
+		return nil, fmt.Errorf("Unexpected offset, expected: %v, actual: %v", pPointsA, o)
+	}
+	// A
+	for i := 0; i < pk.NVars; i++ {
+		b, err = readNBytes(r, 64)
+		if err != nil {
+			return nil, err
+		}
+		p1 := new(bn256.G1)
+		_, err = p1.Unmarshal(b)
+		if err != nil {
+			return nil, err
+		}
+		pk.A = append(pk.A, p1)
+		o += 64
+	}
+	if o != pPointsB1 {
+		return nil, fmt.Errorf("Unexpected offset, expected: %v, actual: %v", pPointsB1, o)
+	}
+	// B1
+	for i := 0; i < pk.NVars; i++ {
+		b, err = readNBytes(r, 64)
+		if err != nil {
+			return nil, err
+		}
+		p1 := new(bn256.G1)
+		_, err = p1.Unmarshal(b)
+		if err != nil {
+			return nil, err
+		}
+		pk.B1 = append(pk.B1, p1)
+		o += 64
+	}
+	if o != pPointsB2 {
+		return nil, fmt.Errorf("Unexpected offset, expected: %v, actual: %v", pPointsB2, o)
+	}
+	// B2
+	for i := 0; i < pk.NVars; i++ {
+		b, err = readNBytes(r, 128)
+		if err != nil {
+			return nil, err
+		}
+		p2 := new(bn256.G2)
+		_, err = p2.Unmarshal(b)
+		if err != nil {
+			return nil, err
+		}
+		pk.B2 = append(pk.B2, p2)
+		o += 128
+	}
+	if o != pPointsC {
+		return nil, fmt.Errorf("Unexpected offset, expected: %v, actual: %v", pPointsC, o)
+	}
+	// C
+	zb := make([]byte, 64)
+	z := new(bn256.G1)
+	_, err = z.Unmarshal(zb)
+	if err != nil {
+		return nil, err
+	}
+	pk.C = append(pk.C, z)
+	pk.C = append(pk.C, z)
+	pk.C = append(pk.C, z)
+	for i := pk.NPublic + 1; i < pk.NVars; i++ {
+		b, err = readNBytes(r, 64)
+		if err != nil {
+			return nil, err
+		}
+		p1 := new(bn256.G1)
+		_, err = p1.Unmarshal(b)
+		if err != nil {
+			return nil, err
+		}
+		pk.C = append(pk.C, p1)
+		o += 64
+	}
+	if o != pPointsHExps {
+		return nil, fmt.Errorf("Unexpected offset, expected: %v, actual: %v", pPointsHExps, o)
+	}
+	// HExps
+	for i := 0; i < pk.DomainSize+1; i++ {
+		b, err = readNBytes(r, 64)
+		if err != nil {
+			return nil, err
+		}
+		p1 := new(bn256.G1)
+		_, err = p1.Unmarshal(b)
+		if err != nil {
+			return nil, err
+		}
+		pk.HExps = append(pk.HExps, p1)
+	}
+
+	return &pk, nil
 }
