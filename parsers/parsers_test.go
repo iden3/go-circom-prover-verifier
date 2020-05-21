@@ -297,17 +297,22 @@ func benchmarkParsePk(b *testing.B, circuit string) {
 
 	b.Run("ParsePkJson "+circuit, func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			ParsePkBin(pkBinFile)
+			_, err = ParsePk(pkJson)
+			require.Nil(b, err)
 		}
 	})
 	b.Run("ParsePkBin "+circuit, func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			ParsePk(pkJson)
+			pkBinFile.Seek(0, 0)
+			_, err = ParsePkBin(pkBinFile)
+			require.Nil(b, err)
 		}
 	})
 	b.Run("ParsePkGoBin "+circuit, func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			ParsePkGoBin(pkBinFile)
+			pkGoBinFile.Seek(0, 0)
+			_, err = ParsePkGoBin(pkGoBinFile)
+			require.Nil(b, err)
 		}
 	})
 }
