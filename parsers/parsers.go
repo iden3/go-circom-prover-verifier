@@ -10,6 +10,7 @@ import (
 	"io"
 	"math/big"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -814,9 +815,9 @@ func ParsePkBin(f *os.File) (*types.Pk, error) {
 	if err != nil {
 		return nil, err
 	}
-	pk.C = append(pk.C, z) // circom behaviour (3x null==["0", "0", "0"])
-	pk.C = append(pk.C, z)
-	pk.C = append(pk.C, z)
+	for i := 0; i < pk.NPublic+1; i++ {
+		pk.C = append(pk.C, z)
+	}
 	for i := pk.NPublic + 1; i < pk.NVars; i++ {
 		b, err = readNBytes(r, 64)
 		if err != nil {
@@ -969,6 +970,15 @@ func coordFromMont(u, q *big.Int) *big.Int {
 	)
 }
 
+func sortedKeys(m map[int]*big.Int) []int {
+	keys := make([]int, 0, len(m))
+	for k, _ := range m {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
+	return keys
+}
+
 // PkToGoBin converts the ProvingKey (*types.Pk) into binary format defined by
 // go-circom-prover-verifier.  PkGoBin is a own go-circom-prover-verifier
 // binary format that allows to go faster when parsing.
@@ -1017,7 +1027,8 @@ func PkToGoBin(pk *types.Pk) ([]byte, error) {
 		binary.LittleEndian.PutUint32(b[:], uint32(len(pk.PolsA[i])))
 		r = append(r, b[:]...)
 		o += 4
-		for j, v := range pk.PolsA[i] {
+		for _, j := range sortedKeys(pk.PolsA[i]) {
+			v := pk.PolsA[i][j]
 			binary.LittleEndian.PutUint32(b[:], uint32(j))
 			r = append(r, b[:]...)
 			r = append(r, addPadding32(v.Bytes())...)
@@ -1030,7 +1041,8 @@ func PkToGoBin(pk *types.Pk) ([]byte, error) {
 		binary.LittleEndian.PutUint32(b[:], uint32(len(pk.PolsB[i])))
 		r = append(r, b[:]...)
 		o += 4
-		for j, v := range pk.PolsB[i] {
+		for _, j := range sortedKeys(pk.PolsB[i]) {
+			v := pk.PolsB[i][j]
 			binary.LittleEndian.PutUint32(b[:], uint32(j))
 			r = append(r, b[:]...)
 			r = append(r, addPadding32(v.Bytes())...)
@@ -1279,9 +1291,9 @@ func ParsePkGoBin(f *os.File) (*types.Pk, error) {
 	if err != nil {
 		return nil, err
 	}
-	pk.C = append(pk.C, z)
-	pk.C = append(pk.C, z)
-	pk.C = append(pk.C, z)
+	for i := 0; i < pk.NPublic+1; i++ {
+		pk.C = append(pk.C, z)
+	}
 	for i := pk.NPublic + 1; i < pk.NVars; i++ {
 		b, err = readNBytes(r, 64)
 		if err != nil {
