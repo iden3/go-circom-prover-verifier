@@ -83,7 +83,6 @@ type Pk struct {
 	DomainSize int
 	PolsA      []map[int]*big.Int
 	PolsB      []map[int]*big.Int
-	PolsC      []map[int]*big.Int
 }
 
 // Witness contains the witness
