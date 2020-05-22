@@ -238,6 +238,11 @@ func testCircuitParsePkBin(t *testing.T, circuit string) {
 	assert.Equal(t, pkJ.B2, pk.B2)
 	assert.Equal(t, pkJ.C, pk.C)
 	assert.Equal(t, pkJ.HExps[:pkJ.DomainSize], pk.HExps[:pk.DomainSize]) // circom behaviour
+
+	assert.Equal(t, pkJ.NVars, pk.NVars)
+	assert.Equal(t, pkJ.NPublic, pk.NPublic)
+	assert.Equal(t, pkJ.DomainSize, pk.DomainSize)
+	assert.Equal(t, pkJ.PolsC, pk.PolsC)
 }
 
 func TestParsePkBin(t *testing.T) {
@@ -274,6 +279,17 @@ func testGoCircomPkFormat(t *testing.T, circuit string) {
 	assert.Equal(t, pk.HExps, pkG.HExps)
 	assert.Equal(t, pk.PolsA, pkG.PolsA)
 	assert.Equal(t, pk.PolsB, pkG.PolsB)
+
+	assert.Equal(t, pk.NVars, pkG.NVars)
+	assert.Equal(t, pk.NPublic, pkG.NPublic)
+	assert.Equal(t, pk.DomainSize, pkG.DomainSize)
+	assert.Equal(t, pk.PolsC, pkG.PolsC)
+
+	// pkPrettyJSON, err := json.MarshalIndent(pk, "", "  ")
+	// require.Nil(t, err)
+	// pkGoPrettyJSON, err := json.MarshalIndent(pkG, "", "  ")
+	// require.Nil(t, err)
+	// assert.Equal(t, pkPrettyJSON, pkGoPrettyJSON)
 }
 
 func TestGoCircomPkFormat(t *testing.T) {
