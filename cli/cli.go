@@ -159,7 +159,9 @@ func cmdConvert(provingKeyPath, provingKeyBinPath string) error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(provingKeyBinPath, pkGBin, 0644)
+	if err = ioutil.WriteFile(provingKeyBinPath, pkGBin, 0644); err != nil {
+		return err
+	}
 
 	return nil
 }
