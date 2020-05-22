@@ -34,7 +34,6 @@ type PkString struct {
 	DomainSize int                 `json:"domainSize"`
 	PolsA      []map[string]string `json:"polsA"`
 	PolsB      []map[string]string `json:"polsB"`
-	PolsC      []map[string]string `json:"polsC"`
 }
 
 // WitnessString contains the Witness in string representation
@@ -146,10 +145,6 @@ func pkStringToPk(ps PkString) (*types.Pk, error) {
 		return nil, err
 	}
 	p.PolsB, err = polsStringToBigInt(ps.PolsB)
-	if err != nil {
-		return nil, err
-	}
-	p.PolsC, err = polsStringToBigInt(ps.PolsC)
 	if err != nil {
 		return nil, err
 	}
